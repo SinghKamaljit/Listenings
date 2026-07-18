@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Listenings — Room 13</title>
+<meta name="theme-color" content="#090e1a"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Listenings"/>
+<link rel="manifest" href="manifest.json"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#090e1a; --surface:#111827; --card:#1a2436;
+  --border:#243044; --accent:#00d4ff; --accent2:#a855f7;
+  --green:#22c55e; --yellow:#f59e0b;
+  --text:#deeaf8; --muted:#5a7090; --recording:#ef4444;
+}
+*{ box-sizing:border-box; margin:0; padding:0;
+   -webkit-user-select:none; user-select:none;
+   -webkit-tap-highlight-color:transparent; }
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Nunito',sans-serif; min-height:100vh;
+  display:flex; flex-direction:column;
+}
+body::before{
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(168,85,247,0.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(168,85,247,0.025) 1px,transparent 1px);
+  background-size:36px 36px;
+}
+
+/* ── NAME GATE ── */
+#nameGate{
+  position:fixed; inset:0; background:var(--bg); z-index:100;
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  gap:14px; padding:24px;
+}
+.logo{
+  font-family:'Rajdhani',sans-serif; font-size:2.4rem; font-weight:700;
+  color:var(--accent2); text-shadow:0 0 30px rgba(168,85,247,0.5);
+  text-align:center; line-height:1.1;
+}
+.logo span{ color:var(--accent); }
+.subtitle{ color:var(--muted); font-size:0.88rem; text-align:center; max-width:300px; }
+.gate-input{
+  width:100%; max-width:300px; background:var(--card); border:1.5px solid var(--border);
+  border-radius:14px; padding:14px 18px; color:var(--text);
+  font-size:1rem; outline:none; font-family:'Nunito',sans-serif;
+  -webkit-user-select:text !important; user-select:text !important; text-align:center;
+}
+.gate-input:focus{ border-color:var(--accent2); }
+.gate-input::placeholder{ color:var(--muted); }
+.gate-btn{
+  width:100%; max-width:300px; padding:15px; border:none; border-radius:14px;
+  background:linear-gradient(135deg,var(--accent2),#7c3aed);
+  color:#fff; font-family:'Rajdhani',sans-serif;
+  font-size:1.1rem; font-weight:700; cursor:pointer;
+}
+.gate-btn:active{ opacity:0.8; }
+.gate-btn:disabled{ opacity:0.4; }
+.gate-error{ color:#ff6b6b; font-size:0.85rem; text-align:center; min-height:1.2em; }
+
+/* ── SEAT PICKER ── */
+#seatScreen{ display:none; flex-direction:column; min-height:100vh; }
+.seat-header{
+  padding:20px 16px 10px; text-align:center;
+}
+.seat-title{ font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:var(--accent2); }
+.seat-count{ color:var(--muted); font-size:0.82rem; margin-top:4px; }
+.seat-grid{
+  display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
+  padding:14px 16px 30px; max-width:420px; margin:0 auto; width:100%;
+}
+.seat-card{
+  background:var(--card); border:1.5px solid var(--border); border-radius:16px;
+  padding:16px 10px; text-align:center; min-height:84px;
+  display:flex; flex-direction:column; justify-content:center; gap:4px;
+}
+.seat-card.empty{ border-style:dashed; opacity:0.7; }
+.seat-card.taken{ border-color:var(--accent2); }
+.seat-id{ font-family:'Rajdhani',sans-serif; font-size:1.1rem; font-weight:700; color:var(--accent); }
+.seat-name{ font-size:0.85rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.seat-empty-hint{ font-size:0.72rem; color:var(--muted); }
+
+/* ── ROOM SCREEN ── */
+#roomScreen{ display:none; flex-direction:column; min-height:100vh; }
+.room-header{
+  position:sticky; top:0; z-index:10;
+  background:rgba(9,14,26,0.95); backdrop-filter:blur(10px);
+  padding:10px 14px; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.room-title-wrap{ display:flex; flex-direction:column; }
+.room-title{ font-family:'Rajdhani',sans-serif; font-size:1.25rem; font-weight:700; color:var(--accent2); }
+.room-sub{ font-size:0.68rem; color:var(--muted); }
+.header-right{ display:flex; gap:8px; align-items:center; }
+.seat-badge{
+  display:flex; align-items:center; gap:6px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:5px 12px;
+  font-family:'Rajdhani',sans-serif; font-size:0.8rem;
+  font-weight:700; color:var(--accent); letter-spacing:0.5px;
+}
+.out-btn{
+  background:none; border:1px solid var(--border);
+  border-radius:20px; padding:5px 10px;
+  color:var(--muted); font-size:0.72rem; cursor:pointer;
+}
+.feed{
+  flex:1; overflow-y:auto; padding:14px 12px 140px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.feed-empty{ text-align:center; color:var(--muted); font-size:0.85rem; padding:40px 20px; }
+.bubble{
+  background:var(--card); border:1.5px solid var(--border); border-radius:16px;
+  padding:12px 14px; max-width:88%;
+}
+.bubble.mine{ align-self:flex-end; border-color:var(--accent2); }
+.bubble-meta{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px; }
+.bubble-name{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.85rem; color:var(--accent); }
+.bubble.mine .bubble-name{ color:var(--accent2); }
+.bubble-time{ font-size:0.68rem; color:var(--muted); white-space:nowrap; }
+.bubble-play-row{ display:flex; align-items:center; gap:10px; }
+.play-btn{
+  width:38px; height:38px; border-radius:50%; border:none; flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),#0099bb); color:#000;
+  font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.bubble.mine .play-btn{ background:linear-gradient(135deg,var(--accent2),#7c3aed); color:#fff; }
+.bubble-progress-wrap{ flex:1; }
+.bubble-progress-bg{ background:var(--border); border-radius:4px; height:5px; overflow:hidden; }
+.bubble-progress-fill{ background:var(--accent); height:100%; width:0%; }
+.bubble.mine .bubble-progress-fill{ background:var(--accent2); }
+.bubble-dur{ font-size:0.68rem; color:var(--muted); margin-top:3px; }
+
+/* ── RECORD DOCK ── */
+.record-dock{
+  position:fixed; bottom:0; left:0; right:0; z-index:20;
+  background:rgba(9,14,26,0.97); backdrop-filter:blur(10px);
+  border-top:1px solid var(--border);
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.rec-timer-line{ font-size:0.78rem; color:var(--muted); font-family:'Rajdhani',sans-serif; min-height:1.2em; }
+.rec-bar-track{ width:100%; max-width:360px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.rec-bar-fill{ height:100%; width:0%; background:var(--recording); }
+.rec-main-btn{
+  width:74px; height:74px; border-radius:50%; border:none;
+  background:linear-gradient(135deg,var(--accent2),#7c3aed);
+  color:#fff; font-family:'Rajdhani',sans-serif; font-size:0.78rem; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 24px rgba(168,85,247,0.4);
+}
+.rec-main-btn.recording{ background:var(--recording); animation:pulseRec 1s infinite; box-shadow:0 0 24px rgba(239,68,68,0.5); }
+@keyframes pulseRec{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+.rec-main-btn:disabled{ opacity:0.4; }
+.rec-hint{ font-size:0.7rem; color:var(--muted); }
+
+/* ── NAME MODAL (seat claim) ── */
+#seatNameModal{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:150;
+  align-items:flex-end; justify-content:center;
+}
+#seatNameModal.open{ display:flex; }
+.seat-name-sheet{
+  background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom));
+  width:100%; max-width:460px; display:flex; flex-direction:column; gap:12px;
+}
+.seat-name-sheet h3{ font-family:'Rajdhani',sans-serif; color:var(--accent2); font-size:1.15rem; }
+.seat-name-input{
+  width:100%; background:var(--card); border:1.5px solid var(--border);
+  border-radius:14px; padding:14px 18px; color:var(--text);
+  font-size:1rem; outline:none; font-family:'Nunito',sans-serif;
+  -webkit-user-select:text !important; user-select:text !important;
+}
+.seat-name-save{
+  width:100%; padding:14px; border:none; border-radius:14px;
+  background:linear-gradient(135deg,var(--accent2),#7c3aed); color:#fff;
+  font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:700; cursor:pointer;
+}
+.seat-name-cancel{
+  width:100%; padding:12px; border:1px solid var(--border); border-radius:14px;
+  background:transparent; color:var(--muted); font-size:0.9rem; cursor:pointer;
+}
+
+#toast{
+  position:fixed; left:50%; bottom:150px; transform:translateX(-50%) translateY(20px);
+  opacity:0; background:var(--card); border:1px solid var(--border); color:var(--text);
+  border-radius:12px; padding:10px 20px; z-index:200;
+  transition:0.3s; pointer-events:none; font-size:0.85rem; white-space:nowrap;
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- NAME GATE -->
+<div id="nameGate">
+  <div class="logo">LISTEN<span>INGS</span> 🎙️</div>
+  <div class="subtitle">Room 13 — a room where every voice gets heard. Type your name to find a seat.</div>
+  <input id="gateNameInput" class="gate-input" type="text" placeholder="Your name (e.g. Kamal)" maxlength="20">
+  <button class="gate-btn" id="gateBtn">ENTER ROOM →</button>
+  <div class="gate-error" id="gateError"></div>
+</div>
+
+<!-- SEAT PICKER -->
+<div id="seatScreen">
+  <div class="seat-header">
+    <div class="seat-title">🎙️ ROOM 13</div>
+    <div class="seat-count" id="seatCountLabel">Loading seats…</div>
+  </div>
+  <div class="seat-grid" id="seatGrid"></div>
+</div>
+
+<!-- ROOM -->
+<div id="roomScreen">
+  <div class="room-header" id="roomTitleTap">
+    <div class="room-title-wrap">
+      <div class="room-title">🎙️ ROOM 13</div>
+      <div class="room-sub">LISTENINGS</div>
+    </div>
+    <div class="header-right">
+      <div class="seat-badge" id="mySeatBadge">--</div>
+      <button class="out-btn" id="leaveSeatBtn">LEAVE</button>
+    </div>
+  </div>
+  <div class="feed" id="feed">
+    <div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>
+  </div>
+</div>
+
+<!-- RECORD DOCK (shown only inside room) -->
+<div class="record-dock" id="recordDock" style="display:none">
+  <div class="rec-timer-line" id="recTimerLine"></div>
+  <div class="rec-bar-track"><div class="rec-bar-fill" id="recBarFill"></div></div>
+  <button class="rec-main-btn" id="recMainBtn">HOLD<br>TO SPEAK</button>
+  <div class="rec-hint">Press and hold · release to send to the room</div>
+</div>
+
+<!-- SEAT NAME MODAL -->
+<div id="seatNameModal">
+  <div class="seat-name-sheet">
+    <h3 id="seatModalTitle">Sit at this seat?</h3>
+    <input id="seatNameInput" class="seat-name-input" type="text" placeholder="Your name" maxlength="20">
+    <button class="seat-name-save" id="seatNameSaveBtn">SIT DOWN →</button>
+    <button class="seat-name-cancel" id="seatNameCancelBtn">Cancel</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getDatabase, ref, set, get, remove, push, onChildAdded, onValue, off
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ── CONFIG (same Firebase project + Cloudinary account as Over To You) ──
+const firebaseConfig = {
+  apiKey:            "AIzaSyAlWc8AFDTF42DyrqlXOFMv5qeFseIxwZk",
+  authDomain:        "over-to-you.firebaseapp.com",
+  projectId:         "over-to-you",
+  storageBucket:     "over-to-you.firebasestorage.app",
+  databaseURL:       "https://over-to-you-default-rtdb.asia-southeast1.firebasedatabase.app",
+  messagingSenderId: "248483734626",
+  appId:             "1:248483734626:web:492766d8b748d7fb875d3b"
+};
+const CLOUDINARY_CLOUD  = "dqwaiio4d";
+const CLOUDINARY_PRESET = "oty123";
+const MAX_RECORD_SECS   = 90;
+const TOTAL_SEATS       = 10;
+const ROOM_PATH         = "listenings_room13";
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ── STATE ─────────────────────────────────────
+let mySeatId       = localStorage.getItem("listenings_seat")  || null;
+let myName         = localStorage.getItem("listenings_name")  || null;
+let pendingSeatId  = null;
+let seatsCache     = {};
+let mediaStream    = null;
+let mediaRecorder  = null;
+let audioChunks    = [];
+let isRecording    = false;
+let recTimerInterval = null;
+let recAutoStopTimer = null;
+let recSecondsElapsed = 0;
+let currentlyPlaying  = null; // {audio, btn, fillEl}
+let feedAttached      = false;
+
+// ── HELPERS ───────────────────────────────────
+function toast(msg, dur){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), dur||3200); }
+function escapeHtml(s){ if(!s)return""; return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+function fmtTime(s){ if(!s||isNaN(s))return"0:00"; return String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.floor(s)%60).padStart(2,"0"); }
+function fmtClock(ts){ return new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
+function vibrateStart(){ try{ if(navigator.vibrate) navigator.vibrate(80); }catch(e){} }
+function vibrateSent(){ try{ if(navigator.vibrate) navigator.vibrate([60,40,60]); }catch(e){} }
+function seatIds(){ const a=[]; for(let i=1;i<=TOTAL_SEATS;i++) a.push("R"+i); return a; }
+
+// ── MICROPHONE ────────────────────────────────
+async function initMicrophone(){
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:44100 }
+    });
+  } catch(err){
+    try { mediaStream = await navigator.mediaDevices.getUserMedia({audio:true}); }
+    catch(e){ toast("❌ Microphone access denied — check browser permissions"); }
+  }
+}
+
+// ── MEDIA RECORDER ────────────────────────────
+function createMediaRecorder(stream){
+  const preferred=["audio/mp4;codecs=mp4a.40.2","audio/mp4","audio/webm;codecs=opus","audio/webm"];
+  const opts={ audioBitsPerSecond:128000 };
+  for (const mime of preferred){
+    if (!MediaRecorder.isTypeSupported(mime)) continue;
+    try { return new MediaRecorder(stream,{ mimeType:mime, ...opts }); } catch(e){}
+  }
+  return new MediaRecorder(stream, opts);
+}
+function extForRecorder(mr){
+  const mime=mr.mimeType||"";
+  if (mime.includes("mp4")) return ".m4a";
+  if (mime.includes("ogg")) return ".ogg";
+  return ".webm";
+}
+
+// ── UPLOAD ────────────────────────────────────
+async function uploadAudio(blob, ext){
+  if (!blob||blob.size===0) throw new Error("Audio blob is empty");
+  const fd=new FormData();
+  fd.append("file", new File([blob], mySeatId+"_"+Date.now()+ext, {type:blob.type||"audio/webm"}));
+  fd.append("upload_preset", CLOUDINARY_PRESET);
+  fd.append("resource_type","video");
+  let res;
+  try { res=await fetch("https://api.cloudinary.com/v1_1/"+CLOUDINARY_CLOUD+"/video/upload",{method:"POST",body:fd}); }
+  catch(e){ throw new Error("Network error: "+e.message); }
+  if (!res.ok){
+    let detail="HTTP "+res.status;
+    try { const eb=await res.json(); detail=eb.error?.message||JSON.stringify(eb); } catch(e){}
+    throw new Error("Upload rejected: "+detail);
+  }
+  const data=await res.json();
+  if (!data.secure_url) throw new Error("No URL in response");
+  return data.secure_url;
+}
+
+// ── SEAT PICKER ───────────────────────────────
+async function loadSeatScreen(){
+  document.getElementById("nameGate").style.display="none";
+  document.getElementById("seatScreen").style.display="flex";
+  const snap = await get(ref(db, ROOM_PATH+"/seats"));
+  seatsCache = snap.exists()? snap.val() : {};
+  renderSeatGrid();
+}
+function renderSeatGrid(){
+  const grid=document.getElementById("seatGrid");
+  grid.innerHTML="";
+  let taken=0;
+  seatIds().forEach(id=>{
+    const seat=seatsCache[id];
+    const card=document.createElement("div");
+    card.className="seat-card"+(seat?" taken":" empty");
+    if (seat) taken++;
+    card.innerHTML = seat
+      ? '<div class="seat-id">'+id+'</div><div class="seat-name">'+escapeHtml(seat.name)+'</div>'
+      : '<div class="seat-id">'+id+'</div><div class="seat-empty-hint">Tap to sit</div>';
+    card.addEventListener("click", ()=>{
+      if (seat){ toast(escapeHtml(seat.name)+" is already seated here"); return; }
+      openSeatNameModal(id);
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById("seatCountLabel").textContent = taken+" / "+TOTAL_SEATS+" seated";
+}
+function openSeatNameModal(seatId){
+  pendingSeatId=seatId;
+  document.getElementById("seatModalTitle").textContent = "Sit at "+seatId+"?";
+  document.getElementById("seatNameInput").value = myName || "";
+  document.getElementById("seatNameModal").classList.add("open");
+}
+document.getElementById("seatNameCancelBtn").onclick = ()=>{ document.getElementById("seatNameModal").classList.remove("open"); pendingSeatId=null; };
+document.getElementById("seatNameSaveBtn").onclick = async ()=>{
+  const name=document.getElementById("seatNameInput").value.trim();
+  if (name.length<2){ toast("❌ Enter at least 2 letters"); return; }
+  const seatId=pendingSeatId;
+  const snap = await get(ref(db, ROOM_PATH+"/seats/"+seatId));
+  if (snap.exists()){ toast("❌ Someone just took that seat"); document.getElementById("seatNameModal").classList.remove("open"); renderSeatGrid(); return; }
+  await set(ref(db, ROOM_PATH+"/seats/"+seatId), { name, claimedAt: Date.now() });
+  mySeatId=seatId; myName=name;
+  localStorage.setItem("listenings_seat", seatId);
+  localStorage.setItem("listenings_name", name);
+  document.getElementById("seatNameModal").classList.remove("open");
+  enterRoom();
+};
+
+// ── ROOM ──────────────────────────────────────
+async function enterRoom(){
+  document.getElementById("seatScreen").style.display="none";
+  document.getElementById("roomScreen").style.display="flex";
+  document.getElementById("recordDock").style.display="flex";
+  document.getElementById("mySeatBadge").textContent = mySeatId+" · "+myName;
+  await initMicrophone();
+  if (!feedAttached){ feedAttached=true; attachFeedListener(); }
+}
+document.getElementById("leaveSeatBtn").onclick = async ()=>{
+  if (!confirm("Leave your seat? Someone else can take "+mySeatId+".")) return;
+  try { await remove(ref(db, ROOM_PATH+"/seats/"+mySeatId)); } catch(e){}
+  localStorage.removeItem("listenings_seat");
+  mySeatId=null;
+  if (mediaStream) mediaStream.getTracks().forEach(t=>t.stop());
+  document.getElementById("recordDock").style.display="none";
+  document.getElementById("roomScreen").style.display="none";
+  loadSeatScreen();
+};
+
+// ── FEED ──────────────────────────────────────
+function attachFeedListener(){
+  const msgsRef = ref(db, ROOM_PATH+"/messages");
+  onChildAdded(msgsRef, (snap)=>{
+    document.getElementById("feedEmpty").style.display="none";
+    appendBubble(snap.key, snap.val());
+  });
+}
+function appendBubble(key, msg){
+  const feed=document.getElementById("feed");
+  const mine = msg.seat===mySeatId;
+  const bubble=document.createElement("div");
+  bubble.className="bubble"+(mine?" mine":"");
+  bubble.dataset.key=key;
+  bubble.innerHTML =
+    '<div class="bubble-meta"><span class="bubble-name">'+msg.seat+' · '+escapeHtml(msg.name)+'</span><span class="bubble-time">'+fmtClock(msg.timestamp)+'</span></div>'+
+    '<div class="bubble-play-row"><button class="play-btn">▶</button>'+
+    '<div class="bubble-progress-wrap"><div class="bubble-progress-bg"><div class="bubble-progress-fill"></div></div>'+
+    '<div class="bubble-dur">'+fmtTime(msg.duration||0)+'</div></div></div>';
+  const playBtn=bubble.querySelector(".play-btn");
+  const fillEl =bubble.querySelector(".bubble-progress-fill");
+  const durEl  =bubble.querySelector(".bubble-dur");
+  const totalDur = msg.duration||0;
+  playBtn.addEventListener("click", ()=>togglePlay(msg.audioUrl, playBtn, fillEl, durEl, totalDur));
+  feed.appendChild(bubble);
+  feed.scrollTop = feed.scrollHeight;
+}
+function togglePlay(url, btn, fillEl, durEl, totalDur){
+  if (currentlyPlaying && currentlyPlaying.btn===btn){
+    if (currentlyPlaying.audio.paused){ currentlyPlaying.audio.play(); btn.textContent="⏸"; }
+    else { currentlyPlaying.audio.pause(); btn.textContent="▶"; }
+    return;
+  }
+  if (currentlyPlaying){ currentlyPlaying.audio.pause(); currentlyPlaying.btn.textContent="▶"; }
+  const audio=new Audio(url);
+  currentlyPlaying={ audio, btn };
+  btn.textContent="⏸";
+  audio.addEventListener("timeupdate", ()=>{
+    const d = audio.duration || totalDur || 1;
+    fillEl.style.width = Math.min(100,(audio.currentTime/d)*100)+"%";
+    durEl.textContent = fmtTime(audio.currentTime)+" / "+fmtTime(totalDur||audio.duration||0);
+  });
+  audio.addEventListener("ended", ()=>{ btn.textContent="▶"; fillEl.style.width="0%"; durEl.textContent=fmtTime(totalDur); currentlyPlaying=null; });
+  audio.addEventListener("error", ()=>{ btn.textContent="▶"; toast("Playback failed"); currentlyPlaying=null; });
+  audio.play().catch(()=>{ btn.textContent="▶"; toast("Playback failed"); });
+}
+
+// ── RECORDING (press and hold) ────────────────
+const recBtn=document.getElementById("recMainBtn");
+function startRecording(){
+  if (!mediaStream){ toast("⏳ Microphone not ready"); return; }
+  if (isRecording) return;
+  try {
+    audioChunks=[];
+    mediaRecorder=createMediaRecorder(mediaStream);
+    mediaRecorder.ondataavailable=(ev)=>{ if(ev.data&&ev.data.size>0) audioChunks.push(ev.data); };
+    mediaRecorder.onstop=sendRecording;
+    mediaRecorder.onerror=(err)=>{ console.error(err); toast("Recording error — try again"); stopRecording(false); };
+    mediaRecorder.start(250);
+    vibrateStart(); isRecording=true;
+    recBtn.classList.add("recording"); recBtn.innerHTML="STOP<br>SPEAKING";
+    startRecTimer();
+  } catch(err){ console.error(err); toast("❌ Could not start recording"); }
+}
+function stopRecording(shouldSend){
+  if (!isRecording) return;
+  isRecording=false;
+  if (mediaRecorder && mediaRecorder.state==="recording"){
+    if (!shouldSend) mediaRecorder.onstop=null;
+    mediaRecorder.stop();
+  }
+  stopRecTimer();
+  recBtn.classList.remove("recording"); recBtn.innerHTML="HOLD<br>TO SPEAK";
+}
+function startRecTimer(){
+  recSecondsElapsed=0;
+  const line=document.getElementById("recTimerLine");
+  const bar =document.getElementById("recBarFill");
+  bar.style.transition="none"; bar.style.width="0%";
+  requestAnimationFrame(()=>{ bar.style.transition="width "+MAX_RECORD_SECS+"s linear"; bar.style.width="100%"; });
+  line.textContent="● "+fmtTime(0);
+  recTimerInterval=setInterval(()=>{
+    recSecondsElapsed++;
+    line.textContent="● "+fmtTime(recSecondsElapsed);
+    if (recSecondsElapsed===MAX_RECORD_SECS-10) toast("⚠️ 10 seconds left");
+  },1000);
+  recAutoStopTimer=setTimeout(()=>{
+    if (mediaRecorder && mediaRecorder.state==="recording"){ toast("⏹ Max length — sending…"); mediaRecorder.stop(); }
+  }, MAX_RECORD_SECS*1000);
+}
+function stopRecTimer(){
+  clearInterval(recTimerInterval); clearTimeout(recAutoStopTimer);
+  recTimerInterval=recAutoStopTimer=null;
+  const line=document.getElementById("recTimerLine");
+  const bar =document.getElementById("recBarFill");
+  line.textContent=""; bar.style.transition="none"; bar.style.width="0%";
+}
+async function sendRecording(){
+  const dur=recSecondsElapsed;
+  if (!audioChunks.length){ return; }
+  recBtn.disabled=true; recBtn.innerHTML="SENDING…";
+  try {
+    const ext = extForRecorder(mediaRecorder);
+    const blob = new Blob(audioChunks, {type:mediaRecorder.mimeType||"audio/webm"});
+    const audioUrl = await uploadAudio(blob, ext);
+    await push(ref(db, ROOM_PATH+"/messages"), {
+      seat:mySeatId, name:myName, audioUrl, duration:dur, timestamp:Date.now()
+    });
+    vibrateSent();
+  } catch(err){ console.error(err); toast("❌ Send failed — "+err.message); }
+  finally { recBtn.disabled=false; recBtn.innerHTML="HOLD<br>TO SPEAK"; }
+}
+recBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(); });
+recBtn.addEventListener("pointerup",   ()=>{ if(isRecording) stopRecording(true); });
+recBtn.addEventListener("pointerleave",()=>{ if(isRecording) stopRecording(true); });
+recBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
+
+document.addEventListener("visibilitychange", ()=>{
+  if (document.hidden && isRecording) stopRecording(true);
+});
+window.addEventListener("beforeunload", ()=>{ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); });
+
+// ── ADMIN CLEAR — tap room title 3x ───────────
+let titleTapCount=0, titleTapTimer=null;
+document.getElementById("roomTitleTap").addEventListener("click", ()=>{
+  titleTapCount++;
+  clearTimeout(titleTapTimer);
+  titleTapTimer=setTimeout(()=>{ titleTapCount=0; }, 1200);
+  if (titleTapCount>=3){
+    titleTapCount=0;
+    if (confirm("Clear all voices in Room 13? Seats stay as they are.")){
+      remove(ref(db, ROOM_PATH+"/messages")).then(()=>{
+        document.getElementById("feed").innerHTML = '<div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>';
+        toast("🧹 Room 13 cleared");
+      }).catch(()=>toast("❌ Clear failed"));
+    }
+  }
+});
+
+// ── NAME GATE / BOOT ───────────────────────────
+document.getElementById("gateBtn").onclick = async ()=>{
+  const name=document.getElementById("gateNameInput").value.trim();
+  const err=document.getElementById("gateError");
+  if (name.length<2){ err.textContent="❌ Enter at least 2 letters"; return; }
+  err.textContent="";
+  myName=name;
+  localStorage.setItem("listenings_name", name);
+  loadSeatScreen();
+};
+(async function boot(){
+  if (mySeatId && myName){
+    const snap = await get(ref(db, ROOM_PATH+"/seats/"+mySeatId));
+    if (snap.exists() && snap.val().name===myName){
+      document.getElementById("nameGate").style.display="none";
+      enterRoom();
+      return;
+    }
+    localStorage.removeItem("listenings_seat");
+    mySeatId=null;
+  }
+  if (myName){
+    document.getElementById("gateNameInput").value=myName;
+  }
+})();
+</script>
+</body>
+</html>
