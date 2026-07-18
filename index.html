@@ -34,45 +34,12 @@ body::before{
   background-size:36px 36px;
 }
 
-/* ── SHARED GATE STYLES (room gate + name gate) ── */
-.gate-screen{
-  position:fixed; inset:0; background:var(--bg); z-index:100;
-  display:flex; flex-direction:column; justify-content:center; align-items:center;
-  gap:14px; padding:24px;
-}
-.logo{
-  font-family:'Rajdhani',sans-serif; font-size:2.4rem; font-weight:700;
-  color:var(--accent2); text-shadow:0 0 30px rgba(168,85,247,0.5);
-  text-align:center; line-height:1.1;
-}
-.logo span{ color:var(--accent); }
-.subtitle{ color:var(--muted); font-size:0.88rem; text-align:center; max-width:300px; }
-.gate-input{
-  width:100%; max-width:300px; background:var(--card); border:1.5px solid var(--border);
-  border-radius:14px; padding:14px 18px; color:var(--text);
-  font-size:1rem; outline:none; font-family:'Nunito',sans-serif;
-  -webkit-user-select:text !important; user-select:text !important; text-align:center;
-}
-.gate-input:focus{ border-color:var(--accent2); }
-.gate-input::placeholder{ color:var(--muted); }
-.gate-btn{
-  width:100%; max-width:300px; padding:15px; border:none; border-radius:14px;
-  background:linear-gradient(135deg,var(--accent2),#7c3aed);
-  color:#fff; font-family:'Rajdhani',sans-serif;
-  font-size:1.1rem; font-weight:700; cursor:pointer;
-}
-.gate-btn:active{ opacity:0.8; }
-.gate-btn:disabled{ opacity:0.4; }
-.gate-error{ color:#ff6b6b; font-size:0.85rem; text-align:center; min-height:1.2em; }
-.gate-hint{ color:var(--muted); font-size:0.74rem; text-align:center; max-width:300px; line-height:1.4; }
-
 /* ── SEAT PICKER ── */
 #seatScreen{ display:none; flex-direction:column; min-height:100vh; }
 .seat-header{ padding:20px 16px 10px; text-align:center; }
 .seat-title{ font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:var(--accent2); }
 .seat-count{ color:var(--muted); font-size:0.82rem; margin-top:4px; }
 .seat-legend{ color:var(--muted); font-size:0.72rem; margin-top:6px; padding:0 20px; line-height:1.5; }
-.switch-room-link{ display:block; margin:10px auto 0; background:none; border:none; color:var(--muted); font-size:0.74rem; text-decoration:underline; cursor:pointer; }
 .seat-grid{
   display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
   padding:14px 16px 30px; max-width:420px; margin:0 auto; width:100%;
@@ -241,32 +208,12 @@ body::before{
 </head>
 <body>
 
-<!-- ROOM GATE (entered first) -->
-<div id="roomGate" class="gate-screen">
-  <div class="logo">LISTEN<span>INGS</span> 🎙️</div>
-  <div class="subtitle">A settlement courtyard where every voice gets heard. No text, only voice.</div>
-  <input id="roomNumInput" class="gate-input" type="number" inputmode="numeric" placeholder="Room number (e.g. 13)" min="1" max="99">
-  <button class="gate-btn" id="roomGateBtn">GO TO ROOM →</button>
-  <div class="gate-error" id="roomGateError"></div>
-  <div class="gate-hint">Every room number (01, 02, 13 …) has the same 10 settlement seats — Evaluator, two Parties, two Advocates, five Sakshi. Ask whoever convened this session which room number to use.</div>
-</div>
-
-<!-- NAME GATE -->
-<div id="nameGate" class="gate-screen" style="display:none">
-  <div class="logo">ROOM <span id="nameGateRoomNum">--</span></div>
-  <div class="subtitle">Type your name to find a seat in this room.</div>
-  <input id="gateNameInput" class="gate-input" type="text" placeholder="Your name (e.g. Kamal)" maxlength="20">
-  <button class="gate-btn" id="gateBtn">CONTINUE →</button>
-  <div class="gate-error" id="gateError"></div>
-</div>
-
-<!-- SEAT PICKER -->
+<!-- SEAT PICKER (landing screen — room comes from the shared link) -->
 <div id="seatScreen">
   <div class="seat-header">
     <div class="seat-title">🎙️ ROOM <span id="seatScreenRoomNum">--</span></div>
     <div class="seat-count" id="seatCountLabel">Loading seats…</div>
     <div class="seat-legend">EV Evaluator · P1/P2 Parties · A1/A2 Advocates · S1–S5 Sakshi (listen-only witnesses)</div>
-    <button class="switch-room-link" id="switchRoomLink">Wrong room? Switch room</button>
   </div>
   <div class="seat-grid" id="seatGrid"></div>
 </div>
@@ -359,8 +306,21 @@ function padRoom(n){ return String(n).padStart(2,"0"); }
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
+// ── ROOM NUMBER (comes from the link the convener shares, e.g. ?room=13) ──
+function roomNumFromURL(){
+  const raw = new URLSearchParams(location.search).get("room");
+  const n = parseInt(raw, 10);
+  return (raw && !isNaN(n) && n>=1 && n<=99) ? padRoom(n) : null;
+}
+let roomNum = roomNumFromURL() || localStorage.getItem("listenings_room_num") || "01";
+localStorage.setItem("listenings_room_num", roomNum);
+if (!roomNumFromURL()){
+  const url = new URL(location.href);
+  url.searchParams.set("room", parseInt(roomNum,10));
+  history.replaceState(null, "", url);
+}
+
 // ── STATE ─────────────────────────────────────
-let roomNum        = localStorage.getItem("listenings_room_num") || null; // padded string, e.g. "13"
 let mySeatId       = null;
 let myName         = localStorage.getItem("listenings_name")  || null;
 let pendingSeatId  = null;
@@ -453,68 +413,20 @@ async function downloadAudio(url, filename){
   } catch(e){ toast("❌ Download failed — try long-press on the audio instead"); }
 }
 
-// ── ROOM GATE (entered first) ─────────────────
-document.getElementById("roomGateBtn").onclick = ()=>{
-  const raw=document.getElementById("roomNumInput").value.trim();
-  const err=document.getElementById("roomGateError");
-  const n=parseInt(raw,10);
-  if (!raw || isNaN(n) || n<1 || n>99){ err.textContent="❌ Enter a room number, 1–99"; return; }
-  err.textContent="";
-  roomNum=padRoom(n);
-  localStorage.setItem("listenings_room_num", roomNum);
-  goToNameOrSeat();
-};
-if (roomNum) document.getElementById("roomNumInput").value = parseInt(roomNum,10);
-
-function goToNameOrSeat(){
-  document.getElementById("roomGate").style.display="none";
-  document.getElementById("nameGateRoomNum").textContent = roomNum;
-  document.getElementById("gateNameInput").value = myName || "";
-  if (myName){
-    // try to resume a seat already claimed by this name in this room
-    tryResumeSeat();
-  } else {
-    document.getElementById("nameGate").style.display="flex";
-  }
-}
-document.getElementById("switchRoomLink").onclick = ()=>{
-  document.getElementById("seatScreen").style.display="none";
-  document.getElementById("roomGate").style.display="flex";
-};
-
-// ── NAME GATE ─────────────────────────────────
-document.getElementById("gateBtn").onclick = ()=>{
-  const name=document.getElementById("gateNameInput").value.trim();
-  const err=document.getElementById("gateError");
-  if (name.length<2){ err.textContent="❌ Enter at least 2 letters"; return; }
-  err.textContent="";
-  myName=name;
-  localStorage.setItem("listenings_name", name);
-  loadSeatScreen();
-};
-
-async function tryResumeSeat(){
-  const storedSeat = localStorage.getItem(seatStorageKey());
-  if (storedSeat){
-    const snap = await get(ref(db, roomPath()+"/seats/"+storedSeat));
-    if (snap.exists() && snap.val().name===myName){
-      mySeatId=storedSeat;
-      enterRoom();
-      return;
-    }
-    localStorage.removeItem(seatStorageKey());
-  }
-  document.getElementById("nameGate").style.display="flex";
-}
-
-// ── SEAT PICKER ───────────────────────────────
+// ── SEAT PICKER (landing screen) ──────────────
 async function loadSeatScreen(){
-  document.getElementById("nameGate").style.display="none";
   document.getElementById("seatScreen").style.display="flex";
   document.getElementById("seatScreenRoomNum").textContent = roomNum;
-  const snap = await get(ref(db, roomPath()+"/seats"));
-  seatsCache = snap.exists()? snap.val() : {};
-  renderSeatGrid();
+  document.getElementById("seatCountLabel").textContent = "Loading seats…";
+  try {
+    const snap = await get(ref(db, roomPath()+"/seats"));
+    seatsCache = snap.exists()? snap.val() : {};
+    renderSeatGrid();
+  } catch(err){
+    console.error(err);
+    document.getElementById("seatCountLabel").textContent = "⚠️ Could not load seats — check connection";
+    toast("❌ "+(err.message||"Failed to load seats"));
+  }
 }
 function renderSeatGrid(){
   const grid=document.getElementById("seatGrid");
@@ -562,8 +474,6 @@ document.getElementById("seatNameSaveBtn").onclick = async ()=>{
 
 // ── ROOM ──────────────────────────────────────
 async function enterRoom(){
-  document.getElementById("roomGate").style.display="none";
-  document.getElementById("nameGate").style.display="none";
   document.getElementById("seatScreen").style.display="none";
   document.getElementById("roomScreen").style.display="flex";
   document.getElementById("roomScreenRoomNum").textContent = roomNum;
@@ -780,11 +690,22 @@ document.getElementById("prayerTap").addEventListener("click", (e)=>{
 });
 
 // ── BOOT ────────────────────────────────────────
-(function boot(){
-  if (roomNum){
-    document.getElementById("roomGate").style.display="none";
-    goToNameOrSeat();
+(async function boot(){
+  if (myName){
+    const storedSeat = localStorage.getItem(seatStorageKey());
+    if (storedSeat){
+      try {
+        const snap = await get(ref(db, roomPath()+"/seats/"+storedSeat));
+        if (snap.exists() && snap.val().name===myName){
+          mySeatId=storedSeat;
+          enterRoom();
+          return;
+        }
+      } catch(err){ console.error(err); }
+      localStorage.removeItem(seatStorageKey());
+    }
   }
+  loadSeatScreen();
 })();
 </script>
 </body>
