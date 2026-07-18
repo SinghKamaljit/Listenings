@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-<title>Listenings — Room 13</title>
+<title>Listenings</title>
 <meta name="theme-color" content="#090e1a"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -34,8 +34,8 @@ body::before{
   background-size:36px 36px;
 }
 
-/* ── NAME GATE ── */
-#nameGate{
+/* ── SHARED GATE STYLES (room gate + name gate) ── */
+.gate-screen{
   position:fixed; inset:0; background:var(--bg); z-index:100;
   display:flex; flex-direction:column; justify-content:center; align-items:center;
   gap:14px; padding:24px;
@@ -64,6 +64,7 @@ body::before{
 .gate-btn:active{ opacity:0.8; }
 .gate-btn:disabled{ opacity:0.4; }
 .gate-error{ color:#ff6b6b; font-size:0.85rem; text-align:center; min-height:1.2em; }
+.gate-hint{ color:var(--muted); font-size:0.74rem; text-align:center; max-width:300px; line-height:1.4; }
 
 /* ── SEAT PICKER ── */
 #seatScreen{ display:none; flex-direction:column; min-height:100vh; }
@@ -71,6 +72,7 @@ body::before{
 .seat-title{ font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:var(--accent2); }
 .seat-count{ color:var(--muted); font-size:0.82rem; margin-top:4px; }
 .seat-legend{ color:var(--muted); font-size:0.72rem; margin-top:6px; padding:0 20px; line-height:1.5; }
+.switch-room-link{ display:block; margin:10px auto 0; background:none; border:none; color:var(--muted); font-size:0.74rem; text-decoration:underline; cursor:pointer; }
 .seat-grid{
   display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
   padding:14px 16px 30px; max-width:420px; margin:0 auto; width:100%;
@@ -239,30 +241,41 @@ body::before{
 </head>
 <body>
 
-<!-- NAME GATE -->
-<div id="nameGate">
+<!-- ROOM GATE (entered first) -->
+<div id="roomGate" class="gate-screen">
   <div class="logo">LISTEN<span>INGS</span> 🎙️</div>
-  <div class="subtitle">Room 13 — a settlement courtyard where every voice gets heard. No text, only voice. Type your name to find a seat.</div>
+  <div class="subtitle">A settlement courtyard where every voice gets heard. No text, only voice.</div>
+  <input id="roomNumInput" class="gate-input" type="number" inputmode="numeric" placeholder="Room number (e.g. 13)" min="1" max="99">
+  <button class="gate-btn" id="roomGateBtn">GO TO ROOM →</button>
+  <div class="gate-error" id="roomGateError"></div>
+  <div class="gate-hint">Every room number (01, 02, 13 …) has the same 10 settlement seats — Evaluator, two Parties, two Advocates, five Sakshi. Ask whoever convened this session which room number to use.</div>
+</div>
+
+<!-- NAME GATE -->
+<div id="nameGate" class="gate-screen" style="display:none">
+  <div class="logo">ROOM <span id="nameGateRoomNum">--</span></div>
+  <div class="subtitle">Type your name to find a seat in this room.</div>
   <input id="gateNameInput" class="gate-input" type="text" placeholder="Your name (e.g. Kamal)" maxlength="20">
-  <button class="gate-btn" id="gateBtn">ENTER ROOM →</button>
+  <button class="gate-btn" id="gateBtn">CONTINUE →</button>
   <div class="gate-error" id="gateError"></div>
 </div>
 
 <!-- SEAT PICKER -->
 <div id="seatScreen">
   <div class="seat-header">
-    <div class="seat-title">🎙️ ROOM 13</div>
+    <div class="seat-title">🎙️ ROOM <span id="seatScreenRoomNum">--</span></div>
     <div class="seat-count" id="seatCountLabel">Loading seats…</div>
     <div class="seat-legend">EV Evaluator · P1/P2 Parties · A1/A2 Advocates · S1–S5 Sakshi (listen-only witnesses)</div>
+    <button class="switch-room-link" id="switchRoomLink">Wrong room? Switch room</button>
   </div>
   <div class="seat-grid" id="seatGrid"></div>
 </div>
 
 <!-- ROOM -->
 <div id="roomScreen">
-  <div class="room-header" id="roomTitleTap">
+  <div class="room-header">
     <div class="room-title-wrap">
-      <div class="room-title">🎙️ ROOM 13</div>
+      <div class="room-title">🎙️ ROOM <span id="roomScreenRoomNum">--</span> <span id="prayerTap" style="opacity:0.55;cursor:pointer">🙏</span></div>
       <div class="room-sub">LISTENINGS</div>
     </div>
     <div class="header-right">
@@ -329,9 +342,8 @@ const firebaseConfig = {
 const CLOUDINARY_CLOUD  = "dqwaiio4d";
 const CLOUDINARY_PRESET = "oty123";
 const MAX_RECORD_SECS   = 90;
-const ROOM_PATH         = "listenings_room13";
 
-// ── SEAT / ROLE MODEL (settlement roles, voice-only) ──
+// ── SEAT / ROLE MODEL (settlement roles, voice-only — identical in every room) ──
 const SEAT_ROLES = ["EV","P1","P2","A1","A2","S1","S2","S3","S4","S5"];
 const ROLE_LABELS = {
   EV:"Evaluator", P1:"Party 1", P2:"Party 2",
@@ -342,12 +354,14 @@ function seatIds(){ return SEAT_ROLES; }
 function seatRoleLabel(id){ return ROLE_LABELS[id] || id; }
 function isSakshi(id){ return id && id.startsWith("S"); }
 function isEvaluator(id){ return id==="EV"; }
+function padRoom(n){ return String(n).padStart(2,"0"); }
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
 // ── STATE ─────────────────────────────────────
-let mySeatId       = localStorage.getItem("listenings_seat")  || null;
+let roomNum        = localStorage.getItem("listenings_room_num") || null; // padded string, e.g. "13"
+let mySeatId       = null;
 let myName         = localStorage.getItem("listenings_name")  || null;
 let pendingSeatId  = null;
 let seatsCache     = {};
@@ -361,8 +375,11 @@ let recAutoStopTimer = null;
 let recSecondsElapsed = 0;
 let currentlyPlaying  = null; // {audio, btn}
 let feedAttached      = false;
-let latestResolution  = null; // {audioUrl, duration}
+let latestResolution  = null;
 let pinAudio          = null;
+
+function roomPath(){ return "listenings_rooms/"+roomNum; }
+function seatStorageKey(){ return "listenings_seat_"+roomNum; }
 
 // ── HELPERS ───────────────────────────────────
 function toast(msg, dur){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), dur||3200); }
@@ -402,12 +419,13 @@ function extForRecorder(mr){
 }
 
 // ── UPLOAD ────────────────────────────────────
-async function uploadAudio(blob, ext){
+async function uploadAudio(blob, ext, isResolution){
   if (!blob||blob.size===0) throw new Error("Audio blob is empty");
   const fd=new FormData();
-  fd.append("file", new File([blob], mySeatId+"_"+Date.now()+ext, {type:blob.type||"audio/webm"}));
+  fd.append("file", new File([blob], roomNum+"_"+mySeatId+"_"+Date.now()+ext, {type:blob.type||"audio/webm"}));
   fd.append("upload_preset", CLOUDINARY_PRESET);
   fd.append("resource_type","video");
+  fd.append("tags", "autoclear,listenings,room"+roomNum+(isResolution?",resolution":""));
   let res;
   try { res=await fetch("https://api.cloudinary.com/v1_1/"+CLOUDINARY_CLOUD+"/video/upload",{method:"POST",body:fd}); }
   catch(e){ throw new Error("Network error: "+e.message); }
@@ -435,11 +453,66 @@ async function downloadAudio(url, filename){
   } catch(e){ toast("❌ Download failed — try long-press on the audio instead"); }
 }
 
+// ── ROOM GATE (entered first) ─────────────────
+document.getElementById("roomGateBtn").onclick = ()=>{
+  const raw=document.getElementById("roomNumInput").value.trim();
+  const err=document.getElementById("roomGateError");
+  const n=parseInt(raw,10);
+  if (!raw || isNaN(n) || n<1 || n>99){ err.textContent="❌ Enter a room number, 1–99"; return; }
+  err.textContent="";
+  roomNum=padRoom(n);
+  localStorage.setItem("listenings_room_num", roomNum);
+  goToNameOrSeat();
+};
+if (roomNum) document.getElementById("roomNumInput").value = parseInt(roomNum,10);
+
+function goToNameOrSeat(){
+  document.getElementById("roomGate").style.display="none";
+  document.getElementById("nameGateRoomNum").textContent = roomNum;
+  document.getElementById("gateNameInput").value = myName || "";
+  if (myName){
+    // try to resume a seat already claimed by this name in this room
+    tryResumeSeat();
+  } else {
+    document.getElementById("nameGate").style.display="flex";
+  }
+}
+document.getElementById("switchRoomLink").onclick = ()=>{
+  document.getElementById("seatScreen").style.display="none";
+  document.getElementById("roomGate").style.display="flex";
+};
+
+// ── NAME GATE ─────────────────────────────────
+document.getElementById("gateBtn").onclick = ()=>{
+  const name=document.getElementById("gateNameInput").value.trim();
+  const err=document.getElementById("gateError");
+  if (name.length<2){ err.textContent="❌ Enter at least 2 letters"; return; }
+  err.textContent="";
+  myName=name;
+  localStorage.setItem("listenings_name", name);
+  loadSeatScreen();
+};
+
+async function tryResumeSeat(){
+  const storedSeat = localStorage.getItem(seatStorageKey());
+  if (storedSeat){
+    const snap = await get(ref(db, roomPath()+"/seats/"+storedSeat));
+    if (snap.exists() && snap.val().name===myName){
+      mySeatId=storedSeat;
+      enterRoom();
+      return;
+    }
+    localStorage.removeItem(seatStorageKey());
+  }
+  document.getElementById("nameGate").style.display="flex";
+}
+
 // ── SEAT PICKER ───────────────────────────────
 async function loadSeatScreen(){
   document.getElementById("nameGate").style.display="none";
   document.getElementById("seatScreen").style.display="flex";
-  const snap = await get(ref(db, ROOM_PATH+"/seats"));
+  document.getElementById("seatScreenRoomNum").textContent = roomNum;
+  const snap = await get(ref(db, roomPath()+"/seats"));
   seatsCache = snap.exists()? snap.val() : {};
   renderSeatGrid();
 }
@@ -461,7 +534,7 @@ function renderSeatGrid(){
     });
     grid.appendChild(card);
   });
-  document.getElementById("seatCountLabel").textContent = taken+" / "+SEAT_ROLES.length+" seated";
+  document.getElementById("seatCountLabel").textContent = taken+" / "+SEAT_ROLES.length+" seated in Room "+roomNum;
 }
 function openSeatNameModal(seatId){
   pendingSeatId=seatId;
@@ -477,11 +550,11 @@ document.getElementById("seatNameSaveBtn").onclick = async ()=>{
   const name=document.getElementById("seatNameInput").value.trim();
   if (name.length<2){ toast("❌ Enter at least 2 letters"); return; }
   const seatId=pendingSeatId;
-  const snap = await get(ref(db, ROOM_PATH+"/seats/"+seatId));
+  const snap = await get(ref(db, roomPath()+"/seats/"+seatId));
   if (snap.exists()){ toast("❌ Someone just took that seat"); document.getElementById("seatNameModal").classList.remove("open"); renderSeatGrid(); return; }
-  await set(ref(db, ROOM_PATH+"/seats/"+seatId), { name, role:seatRoleLabel(seatId), claimedAt: Date.now() });
+  await set(ref(db, roomPath()+"/seats/"+seatId), { name, role:seatRoleLabel(seatId), claimedAt: Date.now() });
   mySeatId=seatId; myName=name;
-  localStorage.setItem("listenings_seat", seatId);
+  localStorage.setItem(seatStorageKey(), seatId);
   localStorage.setItem("listenings_name", name);
   document.getElementById("seatNameModal").classList.remove("open");
   enterRoom();
@@ -489,8 +562,11 @@ document.getElementById("seatNameSaveBtn").onclick = async ()=>{
 
 // ── ROOM ──────────────────────────────────────
 async function enterRoom(){
+  document.getElementById("roomGate").style.display="none";
+  document.getElementById("nameGate").style.display="none";
   document.getElementById("seatScreen").style.display="none";
   document.getElementById("roomScreen").style.display="flex";
+  document.getElementById("roomScreenRoomNum").textContent = roomNum;
   document.getElementById("mySeatBadge").textContent = seatRoleLabel(mySeatId)+" · "+myName;
 
   const sakshi = isSakshi(mySeatId);
@@ -502,9 +578,9 @@ async function enterRoom(){
   if (!feedAttached){ feedAttached=true; attachFeedListener(); }
 }
 document.getElementById("leaveSeatBtn").onclick = async ()=>{
-  if (!confirm("Leave your seat as "+seatRoleLabel(mySeatId)+"? Someone else can take it.")) return;
-  try { await remove(ref(db, ROOM_PATH+"/seats/"+mySeatId)); } catch(e){}
-  localStorage.removeItem("listenings_seat");
+  if (!confirm("Leave your seat as "+seatRoleLabel(mySeatId)+" in Room "+roomNum+"? Someone else can take it.")) return;
+  try { await remove(ref(db, roomPath()+"/seats/"+mySeatId)); } catch(e){}
+  localStorage.removeItem(seatStorageKey());
   mySeatId=null;
   if (mediaStream) mediaStream.getTracks().forEach(t=>t.stop());
   document.getElementById("recordDock").style.display="none";
@@ -514,7 +590,7 @@ document.getElementById("leaveSeatBtn").onclick = async ()=>{
 
 // ── FEED ──────────────────────────────────────
 function attachFeedListener(){
-  const msgsRef = ref(db, ROOM_PATH+"/messages");
+  const msgsRef = ref(db, roomPath()+"/messages");
   onChildAdded(msgsRef, (snap)=>{
     document.getElementById("feedEmpty").style.display="none";
     const msg=snap.val();
@@ -540,7 +616,7 @@ function appendBubble(key, msg){
   const totalDur = msg.duration||0;
   playBtn.addEventListener("click", ()=>togglePlay(msg.audioUrl, playBtn, fillEl, durEl, totalDur));
   const dlBtn=bubble.querySelector(".dl-btn");
-  if (dlBtn) dlBtn.addEventListener("click", ()=>downloadAudio(msg.audioUrl, "resolution_room13_"+msg.timestamp+".webm"));
+  if (dlBtn) dlBtn.addEventListener("click", ()=>downloadAudio(msg.audioUrl, "resolution_room"+roomNum+"_"+msg.timestamp+".webm"));
   feed.appendChild(bubble);
   feed.scrollTop = feed.scrollHeight;
 }
@@ -564,7 +640,7 @@ function togglePlay(url, btn, fillEl, durEl, totalDur){
   audio.play().catch(()=>{ btn.textContent="▶"; toast("Playback failed"); });
 }
 
-// ── RESOLUTION PIN (pinned latest resolution, Evaluator's voice decision) ──
+// ── RESOLUTION PIN ─────────────────────────────
 function updateResolutionPin(msg){
   latestResolution = msg;
   document.getElementById("resolutionPin").style.display="block";
@@ -588,7 +664,7 @@ document.getElementById("pinPlayBtn").addEventListener("click", ()=>{
 });
 document.getElementById("pinDlBtn").addEventListener("click", ()=>{
   if (!latestResolution) return;
-  downloadAudio(latestResolution.audioUrl, "resolution_room13_"+latestResolution.timestamp+".webm");
+  downloadAudio(latestResolution.audioUrl, "resolution_room"+roomNum+"_"+latestResolution.timestamp+".webm");
 });
 
 // ── RECORDING (press and hold; normal or resolution) ──────
@@ -656,8 +732,8 @@ async function sendRecording(){
   try {
     const ext = extForRecorder(mediaRecorder);
     const blob = new Blob(audioChunks, {type:mediaRecorder.mimeType||"audio/webm"});
-    const audioUrl = await uploadAudio(blob, ext);
-    await push(ref(db, ROOM_PATH+"/messages"), {
+    const audioUrl = await uploadAudio(blob, ext, wasResolution);
+    await push(ref(db, roomPath()+"/messages"), {
       seat:mySeatId, name:myName, audioUrl, duration:dur, timestamp:Date.now(),
       isResolution: wasResolution
     });
@@ -684,47 +760,30 @@ document.addEventListener("visibilitychange", ()=>{
 window.addEventListener("beforeunload", ()=>{ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); });
 
 // ── ADMIN CLEAR — tap room title 3x ───────────
-let titleTapCount=0, titleTapTimer=null;
-document.getElementById("roomTitleTap").addEventListener("click", ()=>{
-  titleTapCount++;
-  clearTimeout(titleTapTimer);
-  titleTapTimer=setTimeout(()=>{ titleTapCount=0; }, 1200);
-  if (titleTapCount>=3){
-    titleTapCount=0;
-    if (confirm("Clear all voices (including the resolution) in Room 13? Seats stay as they are.")){
-      remove(ref(db, ROOM_PATH+"/messages")).then(()=>{
+let prayerTapCount=0, prayerTapTimer=null;
+document.getElementById("prayerTap").addEventListener("click", (e)=>{
+  e.stopPropagation();
+  prayerTapCount++;
+  clearTimeout(prayerTapTimer);
+  prayerTapTimer=setTimeout(()=>{ prayerTapCount=0; }, 1200);
+  if (prayerTapCount>=3){
+    prayerTapCount=0;
+    if (confirm("Clear all voices (including the resolution) in Room "+roomNum+"? Seats stay as they are.")){
+      remove(ref(db, roomPath()+"/messages")).then(()=>{
         document.getElementById("feed").innerHTML = '<div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>';
         document.getElementById("resolutionPin").style.display="none";
         latestResolution=null;
-        toast("🧹 Room 13 cleared");
+        toast("🧹 Room "+roomNum+" cleared");
       }).catch(()=>toast("❌ Clear failed"));
     }
   }
 });
 
-// ── NAME GATE / BOOT ───────────────────────────
-document.getElementById("gateBtn").onclick = async ()=>{
-  const name=document.getElementById("gateNameInput").value.trim();
-  const err=document.getElementById("gateError");
-  if (name.length<2){ err.textContent="❌ Enter at least 2 letters"; return; }
-  err.textContent="";
-  myName=name;
-  localStorage.setItem("listenings_name", name);
-  loadSeatScreen();
-};
-(async function boot(){
-  if (mySeatId && myName){
-    const snap = await get(ref(db, ROOM_PATH+"/seats/"+mySeatId));
-    if (snap.exists() && snap.val().name===myName){
-      document.getElementById("nameGate").style.display="none";
-      enterRoom();
-      return;
-    }
-    localStorage.removeItem("listenings_seat");
-    mySeatId=null;
-  }
-  if (myName){
-    document.getElementById("gateNameInput").value=myName;
+// ── BOOT ────────────────────────────────────────
+(function boot(){
+  if (roomNum){
+    document.getElementById("roomGate").style.display="none";
+    goToNameOrSeat();
   }
 })();
 </script>

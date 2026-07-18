@@ -1,0 +1,24 @@
+name: Cloudinary Voice Cleanup
+
+# Runs automatically every night, and can also be triggered manually
+# from the Actions tab (the "Run workflow" button) to test it right away.
+on:
+  schedule:
+    - cron: '30 19 * * *'   # 19:30 UTC = 1:00 AM IST — adjust to taste
+  workflow_dispatch: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete every autoclear-tagged voice file (OTY + Listenings)
+        env:
+          CLOUD_NAME: dqwaiio4d
+          API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+        run: |
+          curl -s -X DELETE \
+            -u "${API_KEY}:${API_SECRET}" \
+            "https://api.cloudinary.com/v1_1/${CLOUD_NAME}/resources/video/tags/autoclear"
+          echo ""
+          echo "Cleanup call sent — check the response above for how many files were removed."
