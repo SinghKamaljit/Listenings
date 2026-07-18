@@ -15,7 +15,7 @@
 :root{
   --bg:#090e1a; --surface:#111827; --card:#1a2436;
   --border:#243044; --accent:#00d4ff; --accent2:#a855f7;
-  --green:#22c55e; --yellow:#f59e0b;
+  --green:#22c55e; --yellow:#f59e0b; --gold:#f5a623;
   --text:#deeaf8; --muted:#5a7090; --recording:#ef4444;
 }
 *{ box-sizing:border-box; margin:0; padding:0;
@@ -67,25 +67,27 @@ body::before{
 
 /* ── SEAT PICKER ── */
 #seatScreen{ display:none; flex-direction:column; min-height:100vh; }
-.seat-header{
-  padding:20px 16px 10px; text-align:center;
-}
+.seat-header{ padding:20px 16px 10px; text-align:center; }
 .seat-title{ font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:var(--accent2); }
 .seat-count{ color:var(--muted); font-size:0.82rem; margin-top:4px; }
+.seat-legend{ color:var(--muted); font-size:0.72rem; margin-top:6px; padding:0 20px; line-height:1.5; }
 .seat-grid{
   display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
   padding:14px 16px 30px; max-width:420px; margin:0 auto; width:100%;
 }
 .seat-card{
   background:var(--card); border:1.5px solid var(--border); border-radius:16px;
-  padding:16px 10px; text-align:center; min-height:84px;
-  display:flex; flex-direction:column; justify-content:center; gap:4px;
+  padding:14px 10px; text-align:center; min-height:92px;
+  display:flex; flex-direction:column; justify-content:center; gap:3px;
 }
 .seat-card.empty{ border-style:dashed; opacity:0.7; }
 .seat-card.taken{ border-color:var(--accent2); }
-.seat-id{ font-family:'Rajdhani',sans-serif; font-size:1.1rem; font-weight:700; color:var(--accent); }
-.seat-name{ font-size:0.85rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.seat-empty-hint{ font-size:0.72rem; color:var(--muted); }
+.seat-card.role-ev{ border-color:var(--gold); }
+.seat-card.role-s{ opacity:0.85; }
+.seat-id{ font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:700; color:var(--accent); }
+.seat-role-label{ font-size:0.66rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.seat-name{ font-size:0.85rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; }
+.seat-empty-hint{ font-size:0.72rem; color:var(--muted); margin-top:2px; }
 
 /* ── ROOM SCREEN ── */
 #roomScreen{ display:none; flex-direction:column; min-height:100vh; }
@@ -103,16 +105,37 @@ body::before{
   display:flex; align-items:center; gap:6px;
   background:var(--card); border:1px solid var(--border);
   border-radius:20px; padding:5px 12px;
-  font-family:'Rajdhani',sans-serif; font-size:0.8rem;
-  font-weight:700; color:var(--accent); letter-spacing:0.5px;
+  font-family:'Rajdhani',sans-serif; font-size:0.78rem;
+  font-weight:700; color:var(--accent); letter-spacing:0.3px;
 }
 .out-btn{
   background:none; border:1px solid var(--border);
   border-radius:20px; padding:5px 10px;
   color:var(--muted); font-size:0.72rem; cursor:pointer;
 }
+
+/* ── RESOLUTION PIN ── */
+#resolutionPin{
+  display:none; margin:10px 12px 0; padding:12px 14px;
+  background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));
+  border:1.5px solid var(--gold); border-radius:14px;
+}
+.pin-label{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.8rem; color:var(--gold); margin-bottom:6px; }
+.pin-row{ display:flex; align-items:center; gap:10px; }
+.pin-btn{
+  width:34px; height:34px; border-radius:50%; border:none; flex-shrink:0;
+  background:var(--gold); color:#000; font-size:0.9rem; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.pin-dl-btn{
+  border:1px solid var(--gold); background:transparent; color:var(--gold);
+  border-radius:20px; padding:6px 12px; font-size:0.72rem; cursor:pointer; white-space:nowrap;
+}
+.pin-progress-bg{ flex:1; background:var(--border); border-radius:4px; height:5px; overflow:hidden; }
+.pin-progress-fill{ background:var(--gold); height:100%; width:0%; }
+
 .feed{
-  flex:1; overflow-y:auto; padding:14px 12px 140px;
+  flex:1; overflow-y:auto; padding:14px 12px 190px;
   display:flex; flex-direction:column; gap:10px;
 }
 .feed-empty{ text-align:center; color:var(--muted); font-size:0.85rem; padding:40px 20px; }
@@ -121,9 +144,11 @@ body::before{
   padding:12px 14px; max-width:88%;
 }
 .bubble.mine{ align-self:flex-end; border-color:var(--accent2); }
+.bubble.resolution{ align-self:center; max-width:96%; border-color:var(--gold); background:rgba(245,166,35,0.06); }
 .bubble-meta{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px; }
 .bubble-name{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.85rem; color:var(--accent); }
 .bubble.mine .bubble-name{ color:var(--accent2); }
+.bubble.resolution .bubble-name{ color:var(--gold); }
 .bubble-time{ font-size:0.68rem; color:var(--muted); white-space:nowrap; }
 .bubble-play-row{ display:flex; align-items:center; gap:10px; }
 .play-btn{
@@ -132,36 +157,50 @@ body::before{
   font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
 }
 .bubble.mine .play-btn{ background:linear-gradient(135deg,var(--accent2),#7c3aed); color:#fff; }
+.bubble.resolution .play-btn{ background:var(--gold); color:#000; }
 .bubble-progress-wrap{ flex:1; }
 .bubble-progress-bg{ background:var(--border); border-radius:4px; height:5px; overflow:hidden; }
 .bubble-progress-fill{ background:var(--accent); height:100%; width:0%; }
 .bubble.mine .bubble-progress-fill{ background:var(--accent2); }
+.bubble.resolution .bubble-progress-fill{ background:var(--gold); }
 .bubble-dur{ font-size:0.68rem; color:var(--muted); margin-top:3px; }
+.dl-btn{
+  margin-top:8px; width:100%; border:1px solid var(--gold); background:transparent; color:var(--gold);
+  border-radius:12px; padding:8px; font-size:0.75rem; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:700;
+}
 
 /* ── RECORD DOCK ── */
 .record-dock{
   position:fixed; bottom:0; left:0; right:0; z-index:20;
   background:rgba(9,14,26,0.97); backdrop-filter:blur(10px);
   border-top:1px solid var(--border);
-  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
   display:flex; flex-direction:column; align-items:center; gap:8px;
 }
 .rec-timer-line{ font-size:0.78rem; color:var(--muted); font-family:'Rajdhani',sans-serif; min-height:1.2em; }
 .rec-bar-track{ width:100%; max-width:360px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
 .rec-bar-fill{ height:100%; width:0%; background:var(--recording); }
+.rec-btn-row{ display:flex; gap:14px; align-items:center; }
 .rec-main-btn{
-  width:74px; height:74px; border-radius:50%; border:none;
+  width:72px; height:72px; border-radius:50%; border:none;
   background:linear-gradient(135deg,var(--accent2),#7c3aed);
-  color:#fff; font-family:'Rajdhani',sans-serif; font-size:0.78rem; font-weight:700;
+  color:#fff; font-family:'Rajdhani',sans-serif; font-size:0.72rem; font-weight:700;
   cursor:pointer; display:flex; align-items:center; justify-content:center;
   box-shadow:0 0 24px rgba(168,85,247,0.4);
 }
 .rec-main-btn.recording{ background:var(--recording); animation:pulseRec 1s infinite; box-shadow:0 0 24px rgba(239,68,68,0.5); }
+.res-btn{
+  width:72px; height:72px; border-radius:50%; border:2px solid var(--gold);
+  background:transparent; color:var(--gold); font-family:'Rajdhani',sans-serif;
+  font-size:0.66rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.res-btn.recording{ background:var(--recording); border-color:var(--recording); color:#fff; animation:pulseRec 1s infinite; }
 @keyframes pulseRec{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
-.rec-main-btn:disabled{ opacity:0.4; }
-.rec-hint{ font-size:0.7rem; color:var(--muted); }
+.rec-main-btn:disabled, .res-btn:disabled{ opacity:0.4; }
+.rec-hint{ font-size:0.7rem; color:var(--muted); text-align:center; }
+.listen-only-note{ font-size:0.78rem; color:var(--muted); text-align:center; padding:4px 0; }
 
-/* ── NAME MODAL (seat claim) ── */
+/* ── SEAT NAME MODAL ── */
 #seatNameModal{
   display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:150;
   align-items:flex-end; justify-content:center;
@@ -172,6 +211,7 @@ body::before{
   width:100%; max-width:460px; display:flex; flex-direction:column; gap:12px;
 }
 .seat-name-sheet h3{ font-family:'Rajdhani',sans-serif; color:var(--accent2); font-size:1.15rem; }
+.seat-name-sheet p{ color:var(--muted); font-size:0.8rem; margin-top:-6px; }
 .seat-name-input{
   width:100%; background:var(--card); border:1.5px solid var(--border);
   border-radius:14px; padding:14px 18px; color:var(--text);
@@ -189,7 +229,7 @@ body::before{
 }
 
 #toast{
-  position:fixed; left:50%; bottom:150px; transform:translateX(-50%) translateY(20px);
+  position:fixed; left:50%; bottom:200px; transform:translateX(-50%) translateY(20px);
   opacity:0; background:var(--card); border:1px solid var(--border); color:var(--text);
   border-radius:12px; padding:10px 20px; z-index:200;
   transition:0.3s; pointer-events:none; font-size:0.85rem; white-space:nowrap;
@@ -202,7 +242,7 @@ body::before{
 <!-- NAME GATE -->
 <div id="nameGate">
   <div class="logo">LISTEN<span>INGS</span> 🎙️</div>
-  <div class="subtitle">Room 13 — a room where every voice gets heard. Type your name to find a seat.</div>
+  <div class="subtitle">Room 13 — a settlement courtyard where every voice gets heard. No text, only voice. Type your name to find a seat.</div>
   <input id="gateNameInput" class="gate-input" type="text" placeholder="Your name (e.g. Kamal)" maxlength="20">
   <button class="gate-btn" id="gateBtn">ENTER ROOM →</button>
   <div class="gate-error" id="gateError"></div>
@@ -213,6 +253,7 @@ body::before{
   <div class="seat-header">
     <div class="seat-title">🎙️ ROOM 13</div>
     <div class="seat-count" id="seatCountLabel">Loading seats…</div>
+    <div class="seat-legend">EV Evaluator · P1/P2 Parties · A1/A2 Advocates · S1–S5 Sakshi (listen-only witnesses)</div>
   </div>
   <div class="seat-grid" id="seatGrid"></div>
 </div>
@@ -229,24 +270,39 @@ body::before{
       <button class="out-btn" id="leaveSeatBtn">LEAVE</button>
     </div>
   </div>
+
+  <div id="resolutionPin">
+    <div class="pin-label">🏛 RESOLUTION — EVALUATOR'S VOICE DECISION</div>
+    <div class="pin-row">
+      <button class="pin-btn" id="pinPlayBtn">▶</button>
+      <div class="pin-progress-bg"><div class="pin-progress-fill" id="pinProgressFill"></div></div>
+      <button class="pin-dl-btn" id="pinDlBtn">⬇ SAVE</button>
+    </div>
+  </div>
+
   <div class="feed" id="feed">
     <div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>
   </div>
 </div>
 
-<!-- RECORD DOCK (shown only inside room) -->
+<!-- RECORD DOCK (shown only inside room, hidden for Sakshi) -->
 <div class="record-dock" id="recordDock" style="display:none">
   <div class="rec-timer-line" id="recTimerLine"></div>
   <div class="rec-bar-track"><div class="rec-bar-fill" id="recBarFill"></div></div>
-  <button class="rec-main-btn" id="recMainBtn">HOLD<br>TO SPEAK</button>
-  <div class="rec-hint">Press and hold · release to send to the room</div>
+  <div class="rec-btn-row">
+    <button class="rec-main-btn" id="recMainBtn">HOLD<br>TO SPEAK</button>
+    <button class="res-btn" id="resMainBtn" style="display:none">HOLD FOR<br>RESOLUTION</button>
+  </div>
+  <div class="rec-hint" id="recHint">Press and hold · release to send to the room</div>
 </div>
+<div class="listen-only-note" id="listenOnlyNote" style="display:none">You are a Sakshi (silent witness) — you can listen, but this seat does not speak.</div>
 
 <!-- SEAT NAME MODAL -->
 <div id="seatNameModal">
   <div class="seat-name-sheet">
     <h3 id="seatModalTitle">Sit at this seat?</h3>
-    <input id="seatNameInput" class="seat-name-input" type="text" placeholder="Your name" maxlength="20">
+    <p id="seatModalSub"></p>
+    <input id="seatNameInput" class="seat-name-input" type="text" placeholder="Your name">
     <button class="seat-name-save" id="seatNameSaveBtn">SIT DOWN →</button>
     <button class="seat-name-cancel" id="seatNameCancelBtn">Cancel</button>
   </div>
@@ -257,7 +313,7 @@ body::before{
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getDatabase, ref, set, get, remove, push, onChildAdded, onValue, off
+  getDatabase, ref, set, get, remove, push, onChildAdded
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ── CONFIG (same Firebase project + Cloudinary account as Over To You) ──
@@ -273,8 +329,19 @@ const firebaseConfig = {
 const CLOUDINARY_CLOUD  = "dqwaiio4d";
 const CLOUDINARY_PRESET = "oty123";
 const MAX_RECORD_SECS   = 90;
-const TOTAL_SEATS       = 10;
 const ROOM_PATH         = "listenings_room13";
+
+// ── SEAT / ROLE MODEL (settlement roles, voice-only) ──
+const SEAT_ROLES = ["EV","P1","P2","A1","A2","S1","S2","S3","S4","S5"];
+const ROLE_LABELS = {
+  EV:"Evaluator", P1:"Party 1", P2:"Party 2",
+  A1:"Advocate 1", A2:"Advocate 2",
+  S1:"Sakshi 1", S2:"Sakshi 2", S3:"Sakshi 3", S4:"Sakshi 4", S5:"Sakshi 5"
+};
+function seatIds(){ return SEAT_ROLES; }
+function seatRoleLabel(id){ return ROLE_LABELS[id] || id; }
+function isSakshi(id){ return id && id.startsWith("S"); }
+function isEvaluator(id){ return id==="EV"; }
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
@@ -288,11 +355,14 @@ let mediaStream    = null;
 let mediaRecorder  = null;
 let audioChunks    = [];
 let isRecording    = false;
+let recordingIsResolution = false;
 let recTimerInterval = null;
 let recAutoStopTimer = null;
 let recSecondsElapsed = 0;
-let currentlyPlaying  = null; // {audio, btn, fillEl}
+let currentlyPlaying  = null; // {audio, btn}
 let feedAttached      = false;
+let latestResolution  = null; // {audioUrl, duration}
+let pinAudio          = null;
 
 // ── HELPERS ───────────────────────────────────
 function toast(msg, dur){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), dur||3200); }
@@ -301,7 +371,6 @@ function fmtTime(s){ if(!s||isNaN(s))return"0:00"; return String(Math.floor(s/60
 function fmtClock(ts){ return new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
 function vibrateStart(){ try{ if(navigator.vibrate) navigator.vibrate(80); }catch(e){} }
 function vibrateSent(){ try{ if(navigator.vibrate) navigator.vibrate([60,40,60]); }catch(e){} }
-function seatIds(){ const a=[]; for(let i=1;i<=TOTAL_SEATS;i++) a.push("R"+i); return a; }
 
 // ── MICROPHONE ────────────────────────────────
 async function initMicrophone(){
@@ -352,6 +421,20 @@ async function uploadAudio(blob, ext){
   return data.secure_url;
 }
 
+// ── DOWNLOAD (export resolution / any voice, to device) ──
+async function downloadAudio(url, filename){
+  try {
+    const res=await fetch(url);
+    const blob=await res.blob();
+    const objUrl=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=objUrl; a.download=filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(objUrl);
+    toast("⬇ Saved to device");
+  } catch(e){ toast("❌ Download failed — try long-press on the audio instead"); }
+}
+
 // ── SEAT PICKER ───────────────────────────────
 async function loadSeatScreen(){
   document.getElementById("nameGate").style.display="none";
@@ -367,22 +450,25 @@ function renderSeatGrid(){
   seatIds().forEach(id=>{
     const seat=seatsCache[id];
     const card=document.createElement("div");
-    card.className="seat-card"+(seat?" taken":" empty");
+    card.className="seat-card"+(seat?" taken":" empty")+(isEvaluator(id)?" role-ev":"")+(isSakshi(id)?" role-s":"");
     if (seat) taken++;
     card.innerHTML = seat
-      ? '<div class="seat-id">'+id+'</div><div class="seat-name">'+escapeHtml(seat.name)+'</div>'
-      : '<div class="seat-id">'+id+'</div><div class="seat-empty-hint">Tap to sit</div>';
+      ? '<div class="seat-id">'+id+'</div><div class="seat-role-label">'+seatRoleLabel(id)+'</div><div class="seat-name">'+escapeHtml(seat.name)+'</div>'
+      : '<div class="seat-id">'+id+'</div><div class="seat-role-label">'+seatRoleLabel(id)+'</div><div class="seat-empty-hint">Tap to sit</div>';
     card.addEventListener("click", ()=>{
-      if (seat){ toast(escapeHtml(seat.name)+" is already seated here"); return; }
+      if (seat){ toast(escapeHtml(seat.name)+" is already seated as "+seatRoleLabel(id)); return; }
       openSeatNameModal(id);
     });
     grid.appendChild(card);
   });
-  document.getElementById("seatCountLabel").textContent = taken+" / "+TOTAL_SEATS+" seated";
+  document.getElementById("seatCountLabel").textContent = taken+" / "+SEAT_ROLES.length+" seated";
 }
 function openSeatNameModal(seatId){
   pendingSeatId=seatId;
-  document.getElementById("seatModalTitle").textContent = "Sit at "+seatId+"?";
+  document.getElementById("seatModalTitle").textContent = "Sit as "+seatRoleLabel(seatId)+" ("+seatId+")?";
+  document.getElementById("seatModalSub").textContent = isSakshi(seatId)
+    ? "Sakshi seats listen only — you won't be able to speak in the room."
+    : "";
   document.getElementById("seatNameInput").value = myName || "";
   document.getElementById("seatNameModal").classList.add("open");
 }
@@ -393,7 +479,7 @@ document.getElementById("seatNameSaveBtn").onclick = async ()=>{
   const seatId=pendingSeatId;
   const snap = await get(ref(db, ROOM_PATH+"/seats/"+seatId));
   if (snap.exists()){ toast("❌ Someone just took that seat"); document.getElementById("seatNameModal").classList.remove("open"); renderSeatGrid(); return; }
-  await set(ref(db, ROOM_PATH+"/seats/"+seatId), { name, claimedAt: Date.now() });
+  await set(ref(db, ROOM_PATH+"/seats/"+seatId), { name, role:seatRoleLabel(seatId), claimedAt: Date.now() });
   mySeatId=seatId; myName=name;
   localStorage.setItem("listenings_seat", seatId);
   localStorage.setItem("listenings_name", name);
@@ -405,13 +491,18 @@ document.getElementById("seatNameSaveBtn").onclick = async ()=>{
 async function enterRoom(){
   document.getElementById("seatScreen").style.display="none";
   document.getElementById("roomScreen").style.display="flex";
-  document.getElementById("recordDock").style.display="flex";
-  document.getElementById("mySeatBadge").textContent = mySeatId+" · "+myName;
-  await initMicrophone();
+  document.getElementById("mySeatBadge").textContent = seatRoleLabel(mySeatId)+" · "+myName;
+
+  const sakshi = isSakshi(mySeatId);
+  document.getElementById("recordDock").style.display = sakshi ? "none" : "flex";
+  document.getElementById("listenOnlyNote").style.display = sakshi ? "block" : "none";
+  document.getElementById("resMainBtn").style.display = isEvaluator(mySeatId) ? "flex" : "none";
+
+  if (!sakshi) await initMicrophone();
   if (!feedAttached){ feedAttached=true; attachFeedListener(); }
 }
 document.getElementById("leaveSeatBtn").onclick = async ()=>{
-  if (!confirm("Leave your seat? Someone else can take "+mySeatId+".")) return;
+  if (!confirm("Leave your seat as "+seatRoleLabel(mySeatId)+"? Someone else can take it.")) return;
   try { await remove(ref(db, ROOM_PATH+"/seats/"+mySeatId)); } catch(e){}
   localStorage.removeItem("listenings_seat");
   mySeatId=null;
@@ -426,25 +517,30 @@ function attachFeedListener(){
   const msgsRef = ref(db, ROOM_PATH+"/messages");
   onChildAdded(msgsRef, (snap)=>{
     document.getElementById("feedEmpty").style.display="none";
-    appendBubble(snap.key, snap.val());
+    const msg=snap.val();
+    appendBubble(snap.key, msg);
+    if (msg.isResolution) updateResolutionPin(msg);
   });
 }
 function appendBubble(key, msg){
   const feed=document.getElementById("feed");
   const mine = msg.seat===mySeatId;
   const bubble=document.createElement("div");
-  bubble.className="bubble"+(mine?" mine":"");
+  bubble.className="bubble"+(mine?" mine":"")+(msg.isResolution?" resolution":"");
   bubble.dataset.key=key;
   bubble.innerHTML =
-    '<div class="bubble-meta"><span class="bubble-name">'+msg.seat+' · '+escapeHtml(msg.name)+'</span><span class="bubble-time">'+fmtClock(msg.timestamp)+'</span></div>'+
+    '<div class="bubble-meta"><span class="bubble-name">'+(msg.isResolution?"🏛 RESOLUTION — ":"")+msg.seat+' · '+escapeHtml(msg.name)+'</span><span class="bubble-time">'+fmtClock(msg.timestamp)+'</span></div>'+
     '<div class="bubble-play-row"><button class="play-btn">▶</button>'+
     '<div class="bubble-progress-wrap"><div class="bubble-progress-bg"><div class="bubble-progress-fill"></div></div>'+
-    '<div class="bubble-dur">'+fmtTime(msg.duration||0)+'</div></div></div>';
+    '<div class="bubble-dur">'+fmtTime(msg.duration||0)+'</div></div></div>'+
+    (msg.isResolution ? '<button class="dl-btn">⬇ SAVE RESOLUTION TO DEVICE</button>' : '');
   const playBtn=bubble.querySelector(".play-btn");
   const fillEl =bubble.querySelector(".bubble-progress-fill");
   const durEl  =bubble.querySelector(".bubble-dur");
   const totalDur = msg.duration||0;
   playBtn.addEventListener("click", ()=>togglePlay(msg.audioUrl, playBtn, fillEl, durEl, totalDur));
+  const dlBtn=bubble.querySelector(".dl-btn");
+  if (dlBtn) dlBtn.addEventListener("click", ()=>downloadAudio(msg.audioUrl, "resolution_room13_"+msg.timestamp+".webm"));
   feed.appendChild(bubble);
   feed.scrollTop = feed.scrollHeight;
 }
@@ -460,19 +556,49 @@ function togglePlay(url, btn, fillEl, durEl, totalDur){
   btn.textContent="⏸";
   audio.addEventListener("timeupdate", ()=>{
     const d = audio.duration || totalDur || 1;
-    fillEl.style.width = Math.min(100,(audio.currentTime/d)*100)+"%";
-    durEl.textContent = fmtTime(audio.currentTime)+" / "+fmtTime(totalDur||audio.duration||0);
+    if (fillEl) fillEl.style.width = Math.min(100,(audio.currentTime/d)*100)+"%";
+    if (durEl) durEl.textContent = fmtTime(audio.currentTime)+" / "+fmtTime(totalDur||audio.duration||0);
   });
-  audio.addEventListener("ended", ()=>{ btn.textContent="▶"; fillEl.style.width="0%"; durEl.textContent=fmtTime(totalDur); currentlyPlaying=null; });
+  audio.addEventListener("ended", ()=>{ btn.textContent="▶"; if(fillEl)fillEl.style.width="0%"; if(durEl)durEl.textContent=fmtTime(totalDur); currentlyPlaying=null; });
   audio.addEventListener("error", ()=>{ btn.textContent="▶"; toast("Playback failed"); currentlyPlaying=null; });
   audio.play().catch(()=>{ btn.textContent="▶"; toast("Playback failed"); });
 }
 
-// ── RECORDING (press and hold) ────────────────
+// ── RESOLUTION PIN (pinned latest resolution, Evaluator's voice decision) ──
+function updateResolutionPin(msg){
+  latestResolution = msg;
+  document.getElementById("resolutionPin").style.display="block";
+  document.getElementById("pinProgressFill").style.width="0%";
+  document.getElementById("pinPlayBtn").textContent="▶";
+}
+document.getElementById("pinPlayBtn").addEventListener("click", ()=>{
+  if (!latestResolution) return;
+  const fillEl=document.getElementById("pinProgressFill");
+  const btn=document.getElementById("pinPlayBtn");
+  if (pinAudio && !pinAudio.paused){ pinAudio.pause(); btn.textContent="▶"; return; }
+  if (pinAudio){ pinAudio.play(); btn.textContent="⏸"; return; }
+  pinAudio=new Audio(latestResolution.audioUrl);
+  btn.textContent="⏸";
+  pinAudio.addEventListener("timeupdate", ()=>{
+    const d=pinAudio.duration||latestResolution.duration||1;
+    fillEl.style.width=Math.min(100,(pinAudio.currentTime/d)*100)+"%";
+  });
+  pinAudio.addEventListener("ended", ()=>{ btn.textContent="▶"; fillEl.style.width="0%"; pinAudio=null; });
+  pinAudio.play().catch(()=>toast("Playback failed"));
+});
+document.getElementById("pinDlBtn").addEventListener("click", ()=>{
+  if (!latestResolution) return;
+  downloadAudio(latestResolution.audioUrl, "resolution_room13_"+latestResolution.timestamp+".webm");
+});
+
+// ── RECORDING (press and hold; normal or resolution) ──────
 const recBtn=document.getElementById("recMainBtn");
-function startRecording(){
+const resBtn=document.getElementById("resMainBtn");
+function startRecording(asResolution){
   if (!mediaStream){ toast("⏳ Microphone not ready"); return; }
   if (isRecording) return;
+  recordingIsResolution = !!asResolution;
+  const activeBtn = asResolution ? resBtn : recBtn;
   try {
     audioChunks=[];
     mediaRecorder=createMediaRecorder(mediaStream);
@@ -481,7 +607,8 @@ function startRecording(){
     mediaRecorder.onerror=(err)=>{ console.error(err); toast("Recording error — try again"); stopRecording(false); };
     mediaRecorder.start(250);
     vibrateStart(); isRecording=true;
-    recBtn.classList.add("recording"); recBtn.innerHTML="STOP<br>SPEAKING";
+    activeBtn.classList.add("recording");
+    activeBtn.innerHTML = asResolution ? "STOP<br>RESOLUTION" : "STOP<br>SPEAKING";
     startRecTimer();
   } catch(err){ console.error(err); toast("❌ Could not start recording"); }
 }
@@ -494,6 +621,7 @@ function stopRecording(shouldSend){
   }
   stopRecTimer();
   recBtn.classList.remove("recording"); recBtn.innerHTML="HOLD<br>TO SPEAK";
+  resBtn.classList.remove("recording"); resBtn.innerHTML="HOLD FOR<br>RESOLUTION";
 }
 function startRecTimer(){
   recSecondsElapsed=0;
@@ -520,23 +648,35 @@ function stopRecTimer(){
 }
 async function sendRecording(){
   const dur=recSecondsElapsed;
+  const wasResolution=recordingIsResolution;
   if (!audioChunks.length){ return; }
-  recBtn.disabled=true; recBtn.innerHTML="SENDING…";
+  recBtn.disabled=true; resBtn.disabled=true;
+  const activeBtn = wasResolution ? resBtn : recBtn;
+  activeBtn.innerHTML="SENDING…";
   try {
     const ext = extForRecorder(mediaRecorder);
     const blob = new Blob(audioChunks, {type:mediaRecorder.mimeType||"audio/webm"});
     const audioUrl = await uploadAudio(blob, ext);
     await push(ref(db, ROOM_PATH+"/messages"), {
-      seat:mySeatId, name:myName, audioUrl, duration:dur, timestamp:Date.now()
+      seat:mySeatId, name:myName, audioUrl, duration:dur, timestamp:Date.now(),
+      isResolution: wasResolution
     });
     vibrateSent();
+    if (wasResolution) toast("🏛 Resolution recorded and sent to the room");
   } catch(err){ console.error(err); toast("❌ Send failed — "+err.message); }
-  finally { recBtn.disabled=false; recBtn.innerHTML="HOLD<br>TO SPEAK"; }
+  finally {
+    recBtn.disabled=false; resBtn.disabled=false;
+    recBtn.innerHTML="HOLD<br>TO SPEAK"; resBtn.innerHTML="HOLD FOR<br>RESOLUTION";
+  }
 }
-recBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(); });
+recBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(false); });
 recBtn.addEventListener("pointerup",   ()=>{ if(isRecording) stopRecording(true); });
 recBtn.addEventListener("pointerleave",()=>{ if(isRecording) stopRecording(true); });
 recBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
+resBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(true); });
+resBtn.addEventListener("pointerup",   ()=>{ if(isRecording) stopRecording(true); });
+resBtn.addEventListener("pointerleave",()=>{ if(isRecording) stopRecording(true); });
+resBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
 
 document.addEventListener("visibilitychange", ()=>{
   if (document.hidden && isRecording) stopRecording(true);
@@ -551,9 +691,11 @@ document.getElementById("roomTitleTap").addEventListener("click", ()=>{
   titleTapTimer=setTimeout(()=>{ titleTapCount=0; }, 1200);
   if (titleTapCount>=3){
     titleTapCount=0;
-    if (confirm("Clear all voices in Room 13? Seats stay as they are.")){
+    if (confirm("Clear all voices (including the resolution) in Room 13? Seats stay as they are.")){
       remove(ref(db, ROOM_PATH+"/messages")).then(()=>{
         document.getElementById("feed").innerHTML = '<div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>';
+        document.getElementById("resolutionPin").style.display="none";
+        latestResolution=null;
         toast("🧹 Room 13 cleared");
       }).catch(()=>toast("❌ Clear failed"));
     }
