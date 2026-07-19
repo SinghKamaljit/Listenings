@@ -483,10 +483,10 @@ async function handleSeatTap(seat, ownerVal, mine){
   const seatId = seat.id;
   if (mine){
     if (!confirm("Leave this seat and free it? You can then tap the correct one.")) return;
-    await remove(ref(db, roomPath()+"/seats/"+seatId));
-    localStorage.removeItem("listenings_seat_"+currentRoomId);
     currentSeatId = null; currentSeatName = null;
+    localStorage.removeItem("listenings_seat_"+currentRoomId);
     stopMic();
+    await remove(ref(db, roomPath()+"/seats/"+seatId));
     return;
   }
   if (ownerVal) return; // taken by someone else
@@ -500,11 +500,22 @@ async function handleSeatTap(seat, ownerVal, mine){
 
   const snap = await get(ref(db, roomPath()+"/seats/"+seatId));
   if (snap.exists()){ alert("Someone just took that seat."); return; }
-  await set(ref(db, roomPath()+"/seats/"+seatId), { claimedBy: clientId, name: name||null, claimedAt: Date.now() });
+
+  // release any seat we're already holding in this room before claiming the new one
+  const previousSeatId = currentSeatId;
+
+  // set local state BEFORE writing — Firebase's local echo can fire the seats
+  // listener before the write's promise resolves, so currentSeatId must already
+  // be correct or the seat briefly renders as someone else's ("Taken", no mic).
   currentSeatId = seatId;
   currentSeatName = name || null;
   localStorage.setItem("listenings_seat_"+currentRoomId, seatId);
   if (seat.canPost) await initMicrophone();
+
+  await set(ref(db, roomPath()+"/seats/"+seatId), { claimedBy: clientId, name: name||null, claimedAt: Date.now() });
+  if (previousSeatId && previousSeatId !== seatId){
+    await remove(ref(db, roomPath()+"/seats/"+previousSeatId));
+  }
 }
 
 document.getElementById("leaveRoomBtn").addEventListener("click", async ()=>{
@@ -705,12 +716,19 @@ async function refreshAdminRoomStatus(){
   const n = adminRoomInput.value.trim();
   if (!n){ adminRoomStatus.textContent="—"; return; }
   const id = padRoomIdFromInput(n);
-  const snap = await get(ref(db, "listenings_rooms/"+id));
-  if (!snap.exists()){ adminRoomStatus.textContent = "Room "+n+": not created yet."; return; }
-  const data = snap.val() || {};
-  const seatCount = data.seats ? Object.keys(data.seats).length : 0;
-  const msgCount  = data.messages ? Object.keys(data.messages).length : 0;
-  adminRoomStatus.textContent = "Room "+n+" — "+seatCount+" seated — "+msgCount+" voice message(s)";
+  try {
+    const [seatsSnap, msgsSnap] = await Promise.all([
+      get(ref(db, "listenings_rooms/"+id+"/seats")),
+      get(ref(db, "listenings_rooms/"+id+"/messages"))
+    ]);
+    if (!seatsSnap.exists() && !msgsSnap.exists()){ adminRoomStatus.textContent = "Room "+n+": not created yet."; return; }
+    const seatCount = seatsSnap.exists() ? Object.keys(seatsSnap.val()).length : 0;
+    const msgCount  = msgsSnap.exists()  ? Object.keys(msgsSnap.val()).length  : 0;
+    adminRoomStatus.textContent = "Room "+n+" — "+seatCount+" seated — "+msgCount+" voice message(s)";
+  } catch(err){
+    console.error(err);
+    adminRoomStatus.textContent = "⚠️ Could not check Room "+n;
+  }
 }
 
 document.getElementById("adminClearBtn").addEventListener("click", ()=>{
@@ -725,10 +743,20 @@ document.getElementById("adminClearBtn").addEventListener("click", ()=>{
 
 async function clearRoom(n){
   const id = padRoomIdFromInput(n);
-  await remove(ref(db, "listenings_rooms/"+id));
+  try {
+    await Promise.all([
+      remove(ref(db, "listenings_rooms/"+id+"/seats")),
+      remove(ref(db, "listenings_rooms/"+id+"/messages"))
+    ]);
+  } catch(err){
+    console.error(err);
+    alert("Could not clear Room "+n+" — "+err.message);
+    return;
+  }
   if (currentRoomId === id){
     localStorage.removeItem("listenings_seat_"+id);
     currentSeatId = null;
+    currentSeatName = null;
     latestResolution = null;
   }
   adminConfirmBox.style.display = "none";
