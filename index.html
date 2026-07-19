@@ -221,7 +221,7 @@
     <span class="field-label">Room number</span>
     <input type="number" id="roomInput" placeholder="e.g. 1" inputmode="numeric">
     <button class="btn-primary" id="enterRoomBtn">Enter room</button>
-    <p class="hint">Sit at the seat you were told to. Every room has the same ten settlement seats — Evaluator, two Parties, two Advocates, five Sakshi (listen-only).</p>
+    <p class="hint">Sit at the seat you were told to. Rooms not part of anything until someone sits.</p>
   </div>
 
   <!-- ROOM VIEW -->
@@ -293,8 +293,21 @@ const CLOUDINARY_PRESET = "oty123";
 const MAX_RECORD_SECS   = 90;
 
 // ── SEAT MODEL (settlement roles, identical in every room) ──
-const SEAT_ROLES = ["EV","P1","P2","A1","A2","S1","S2","S3","S4","S5"];
-function isSakshi(id){ return id && id.startsWith("S"); }
+const SEAT_ROLES = [
+  {id:"EV",code:"EV",canPost:true},{id:"P1",code:"P1",canPost:true},{id:"P2",code:"P2",canPost:true},
+  {id:"A1",code:"A1",canPost:true},{id:"A2",code:"A2",canPost:true},
+  {id:"S1",code:"S1",canPost:false},{id:"S2",code:"S2",canPost:false},{id:"S3",code:"S3",canPost:false},
+  {id:"S4",code:"S4",canPost:false},{id:"S5",code:"S5",canPost:false}
+];
+// Room 13: "Tera" — the general discussion room. Ten open speaking seats,
+// no evaluator, no resolution. Each seat asks for a name/nickname once, on
+// claiming — shown alongside the seat code in the feed, not on the tile.
+const TERA_SEATS = Array.from({length:10}, (_,i)=>({id:"T"+(i+1), code:"T"+(i+1), canPost:true}));
+
+function isTeraRoom(roomId){ return roomId === "13"; }
+function seatSetFor(roomId){ return isTeraRoom(roomId) ? TERA_SEATS : SEAT_ROLES; }
+function seatMeta(roomId, id){ return seatSetFor(roomId).find(s=>s.id===id); }
+function isSakshi(id){ const m=seatMeta(currentRoomId,id); return m ? !m.canPost : false; }
 function isEvaluator(id){ return id === "EV"; }
 function padRoom(n){ return String(n).padStart(2,"0"); }
 
@@ -308,6 +321,7 @@ if (!clientId){ clientId = (crypto.randomUUID ? crypto.randomUUID() : "c"+Date.n
 // ── STATE ─────────────────────────────────────
 let currentRoomId    = null;
 let currentSeatId    = null;
+let currentSeatName  = null;
 let seatsUnsub        = null;
 let mediaStream       = null;
 let mediaRecorder     = null;
@@ -419,7 +433,16 @@ async function goToRoom(n){
   document.getElementById("roomSub").textContent = "loading…";
 
   currentSeatId = localStorage.getItem("listenings_seat_"+currentRoomId) || null;
-  if (currentSeatId && !isSakshi(currentSeatId)) await initMicrophone();
+  currentSeatName = null;
+  if (currentSeatId){
+    if (isTeraRoom(currentRoomId)){
+      try {
+        const seatSnap = await get(ref(db, "listenings_rooms/"+currentRoomId+"/seats/"+currentSeatId));
+        if (seatSnap.exists()) currentSeatName = seatSnap.val().name || null;
+      } catch(e){ console.error(e); }
+    }
+    if (!isSakshi(currentSeatId)) await initMicrophone();
+  }
 
   if (seatsUnsub) seatsUnsub();
   seatsUnsub = onValue(ref(db, roomPath()+"/seats"), (snap)=>{
@@ -436,14 +459,14 @@ async function goToRoom(n){
 function renderRoom(seatsData){
   const grid = document.getElementById("seatGrid");
   grid.innerHTML = "";
-  SEAT_ROLES.forEach(id=>{
-    const owner = seatsData ? seatsData[id] : null;
-    const mine  = currentSeatId === id;
+  seatSetFor(currentRoomId).forEach(seat=>{
+    const owner = seatsData ? seatsData[seat.id] : null;
+    const mine  = currentSeatId === seat.id;
     const taken = !!owner;
     const div = document.createElement("div");
-    div.className = "seat"+(mine?" mine":"")+(taken&&!mine?" taken":"")+(isSakshi(id)?" silent":"");
-    div.innerHTML = '<span class="seat-code">'+id+'</span><span class="seat-state">'+(mine?"You":(taken?"Taken":"Empty"))+'</span>';
-    div.addEventListener("click", ()=>handleSeatTap(id, owner, mine));
+    div.className = "seat"+(mine?" mine":"")+(taken&&!mine?" taken":"")+(!seat.canPost?" silent":"");
+    div.innerHTML = '<span class="seat-code">'+seat.code+'</span><span class="seat-state">'+(mine?"You":(taken?"Taken":"Empty"))+'</span>';
+    div.addEventListener("click", ()=>handleSeatTap(seat, owner, mine));
     grid.appendChild(div);
   });
 
@@ -453,32 +476,42 @@ function renderRoom(seatsData){
   const sakshi = seated && isSakshi(currentSeatId);
   document.getElementById("composer").style.display   = (seated && !sakshi) ? "flex"  : "none";
   document.getElementById("watchOnly").style.display   = (seated && sakshi) ? "block" : "none";
-  document.getElementById("evaluatorTools").style.display = (currentSeatId==="EV") ? "flex" : "none";
+  document.getElementById("evaluatorTools").style.display = (currentSeatId==="EV" && !isTeraRoom(currentRoomId)) ? "flex" : "none";
 }
 
-async function handleSeatTap(seatId, ownerVal, mine){
+async function handleSeatTap(seat, ownerVal, mine){
+  const seatId = seat.id;
   if (mine){
     if (!confirm("Leave this seat and free it? You can then tap the correct one.")) return;
     await remove(ref(db, roomPath()+"/seats/"+seatId));
     localStorage.removeItem("listenings_seat_"+currentRoomId);
-    currentSeatId = null;
+    currentSeatId = null; currentSeatName = null;
     stopMic();
     return;
   }
   if (ownerVal) return; // taken by someone else
+
+  let name = null;
+  if (isTeraRoom(currentRoomId)){
+    name = prompt("What should we call you here? (name or nickname — any length is fine)");
+    if (name === null) return; // cancelled, don't claim the seat
+    name = name.trim();
+  }
+
   const snap = await get(ref(db, roomPath()+"/seats/"+seatId));
   if (snap.exists()){ alert("Someone just took that seat."); return; }
-  await set(ref(db, roomPath()+"/seats/"+seatId), { claimedBy: clientId, claimedAt: Date.now() });
+  await set(ref(db, roomPath()+"/seats/"+seatId), { claimedBy: clientId, name: name||null, claimedAt: Date.now() });
   currentSeatId = seatId;
+  currentSeatName = name || null;
   localStorage.setItem("listenings_seat_"+currentRoomId, seatId);
-  if (!isSakshi(seatId)) await initMicrophone();
+  if (seat.canPost) await initMicrophone();
 }
 
 document.getElementById("leaveRoomBtn").addEventListener("click", async ()=>{
   if (currentSeatId){
     await remove(ref(db, roomPath()+"/seats/"+currentSeatId));
     localStorage.removeItem("listenings_seat_"+currentRoomId);
-    currentSeatId = null;
+    currentSeatId = null; currentSeatName = null;
   }
   stopMic();
   if (seatsUnsub){ seatsUnsub(); seatsUnsub=null; }
@@ -503,7 +536,9 @@ function appendBubble(key, msg){
   const div = document.createElement("div");
   div.className = "msg"+(self?" self":"")+(msg.isResolution?" resolution":"");
   div.dataset.key = key;
-  const label = (msg.isResolution ? "Resolution — " : "") + msg.seat;
+  const code = (msg.seat||"");
+  const codeLabel = msg.name ? (code+" — "+msg.name) : code;
+  const label = (msg.isResolution ? "Resolution — " : "") + codeLabel;
   const totalDur = msg.duration || 0;
   div.innerHTML =
     '<div class="msg-meta"></div>'+
@@ -618,7 +653,7 @@ async function sendRecording(){
     const blob = new Blob(audioChunks, {type:mediaRecorder.mimeType||"audio/webm"});
     const audioUrl = await uploadAudio(blob, ext, wasResolution);
     await push(ref(db, roomPath()+"/messages"), {
-      seat:currentSeatId, audioUrl, duration:dur, timestamp:Date.now(), isResolution: wasResolution
+      seat:currentSeatId, name: currentSeatName||null, audioUrl, duration:dur, timestamp:Date.now(), isResolution: wasResolution
     });
   } catch(err){ console.error(err); alert("Send failed — "+err.message); }
   finally {
