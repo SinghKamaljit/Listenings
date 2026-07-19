@@ -243,13 +243,13 @@
           <div class="rec-timer-line" id="recTimerLine"></div>
           <div class="rec-bar-track"><div class="rec-bar-fill" id="recBarFill"></div></div>
         </div>
-        <button class="rec-btn" id="recMainBtn">Hold to speak</button>
+        <button class="rec-btn" id="recMainBtn">Start speaking</button>
       </div>
       <div class="watch-only" id="watchOnly" style="display:none;">You are seated as a silent witness — you can listen, but this seat does not speak.</div>
     </div>
 
     <div class="toolbar" id="evaluatorTools" style="display:none;">
-      <button class="btn-ghost" id="resolveBtn">Hold for resolution</button>
+      <button class="btn-ghost" id="resolveBtn">Start resolution</button>
       <button class="btn-ghost" id="exportBtn" style="display:none;">Save resolution</button>
     </div>
 
@@ -345,7 +345,7 @@ function padRoomIdFromInput(n){ return padRoom(parseInt(n,10)); }
 async function initMicrophone(){
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:44100 }
+      audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true }
     });
   } catch(err){
     try { mediaStream = await navigator.mediaDevices.getUserMedia({audio:true}); }
@@ -598,7 +598,7 @@ function togglePlay(url, btn, fillEl, durEl, totalDur){
   audio.play().catch(()=>{ btn.textContent="▶"; });
 }
 
-// ── RECORDING (press and hold; normal or resolution) ──────
+// ── RECORDING (tap to start, tap again to stop; normal or resolution) ──
 const recBtn = document.getElementById("recMainBtn");
 const resBtn = document.getElementById("resolveBtn");
 function startRecording(asResolution){
@@ -606,6 +606,7 @@ function startRecording(asResolution){
   if (isRecording) return;
   recordingIsResolution = !!asResolution;
   const activeBtn = asResolution ? resBtn : recBtn;
+  const otherBtn  = asResolution ? recBtn : resBtn;
   try {
     audioChunks=[];
     mediaRecorder=createMediaRecorder(mediaStream);
@@ -615,7 +616,8 @@ function startRecording(asResolution){
     mediaRecorder.start(250);
     isRecording=true;
     activeBtn.classList.add("recording");
-    activeBtn.textContent = asResolution ? "Recording resolution…" : "Recording…";
+    activeBtn.textContent = "⏹ Stop";
+    otherBtn.disabled = true;
     startRecTimer();
   } catch(err){ console.error(err); alert("Could not start recording."); }
 }
@@ -627,8 +629,6 @@ function stopRecording(shouldSend){
     mediaRecorder.stop();
   }
   stopRecTimer();
-  recBtn.classList.remove("recording"); recBtn.textContent="Hold to speak";
-  resBtn.classList.remove("recording"); resBtn.textContent="Hold for resolution";
 }
 function startRecTimer(){
   recSecondsElapsed=0;
@@ -655,7 +655,13 @@ function stopRecTimer(){
 async function sendRecording(){
   const dur=recSecondsElapsed;
   const wasResolution=recordingIsResolution;
-  if (!audioChunks.length) return;
+  recBtn.classList.remove("recording");
+  resBtn.classList.remove("recording");
+  if (!audioChunks.length){
+    recBtn.textContent="Start speaking"; resBtn.textContent="Start resolution";
+    recBtn.disabled=false; resBtn.disabled=false;
+    return;
+  }
   recBtn.disabled=true; resBtn.disabled=true;
   const activeBtn = wasResolution ? resBtn : recBtn;
   activeBtn.textContent="Sending…";
@@ -669,17 +675,17 @@ async function sendRecording(){
   } catch(err){ console.error(err); alert("Send failed — "+err.message); }
   finally {
     recBtn.disabled=false; resBtn.disabled=false;
-    recBtn.textContent="Hold to speak"; resBtn.textContent="Hold for resolution";
+    recBtn.textContent="Start speaking"; resBtn.textContent="Start resolution";
   }
 }
-recBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(false); });
-recBtn.addEventListener("pointerup",    ()=>{ if(isRecording) stopRecording(true); });
-recBtn.addEventListener("pointerleave", ()=>{ if(isRecording) stopRecording(true); });
-recBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
-resBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(true); });
-resBtn.addEventListener("pointerup",    ()=>{ if(isRecording) stopRecording(true); });
-resBtn.addEventListener("pointerleave", ()=>{ if(isRecording) stopRecording(true); });
-resBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
+recBtn.addEventListener("click", ()=>{
+  if (isRecording && !recordingIsResolution) stopRecording(true);
+  else if (!isRecording) startRecording(false);
+});
+resBtn.addEventListener("click", ()=>{
+  if (isRecording && recordingIsResolution) stopRecording(true);
+  else if (!isRecording) startRecording(true);
+});
 
 document.getElementById("exportBtn").addEventListener("click", ()=>{
   if (!latestResolution) return;
