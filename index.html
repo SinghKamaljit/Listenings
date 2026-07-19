@@ -275,7 +275,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getDatabase, ref, set, get, remove, push, onValue, onChildAdded
+  getDatabase, ref, set, get, remove, push, onValue, onChildAdded, onChildRemoved
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ── CONFIG (same Firebase project + Cloudinary account as Over To You) ──
@@ -345,7 +345,7 @@ function padRoomIdFromInput(n){ return padRoom(parseInt(n,10)); }
 async function initMicrophone(){
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
-      audio:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+      audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:44100 }
     });
   } catch(err){
     try { mediaStream = await navigator.mediaDevices.getUserMedia({audio:true}); }
@@ -526,6 +526,8 @@ document.getElementById("leaveRoomBtn").addEventListener("click", async ()=>{
   }
   stopMic();
   if (seatsUnsub){ seatsUnsub(); seatsUnsub=null; }
+  if (msgAddedUnsub){ msgAddedUnsub(); msgAddedUnsub=null; }
+  if (msgRemovedUnsub){ msgRemovedUnsub(); msgRemovedUnsub=null; }
   latestResolution = null;
   roomView.style.display  = "none";
   entryView.style.display = "block";
@@ -533,12 +535,35 @@ document.getElementById("leaveRoomBtn").addEventListener("click", async ()=>{
 });
 
 // ── THREAD (voice bubbles) ────────────────────
+let msgAddedUnsub = null, msgRemovedUnsub = null;
 function attachFeedListener(){
+  if (msgAddedUnsub) msgAddedUnsub();
+  if (msgRemovedUnsub) msgRemovedUnsub();
+  const thread = document.getElementById("thread");
+  thread.innerHTML = '<div class="empty-thread">No voices yet.</div>';
+  latestResolution = null;
+  document.getElementById("statusPill").textContent = "Active";
+  document.getElementById("statusPill").className = "status-pill status-active";
+  document.getElementById("exportBtn").style.display = "none";
+
   const msgsRef = ref(db, roomPath()+"/messages");
-  onChildAdded(msgsRef, (snap)=>{
+  msgAddedUnsub = onChildAdded(msgsRef, (snap)=>{
     const empty = document.querySelector("#thread .empty-thread");
     if (empty) empty.remove();
     appendBubble(snap.key, snap.val());
+  });
+  msgRemovedUnsub = onChildRemoved(msgsRef, (snap)=>{
+    const el = document.querySelector('#thread .msg[data-key="'+snap.key+'"]');
+    if (el) el.remove();
+    if (latestResolution && snap.key === latestResolution.key){
+      latestResolution = null;
+      document.getElementById("statusPill").textContent = "Active";
+      document.getElementById("statusPill").className = "status-pill status-active";
+      document.getElementById("exportBtn").style.display = "none";
+    }
+    if (!document.querySelector("#thread .msg")){
+      document.getElementById("thread").innerHTML = '<div class="empty-thread">No voices yet.</div>';
+    }
   });
 }
 function appendBubble(key, msg){
@@ -571,7 +596,7 @@ function appendBubble(key, msg){
   thread.scrollTop = thread.scrollHeight;
 
   if (msg.isResolution){
-    latestResolution = msg;
+    latestResolution = { ...msg, key };
     document.getElementById("statusPill").textContent = "Resolved";
     document.getElementById("statusPill").className = "status-pill status-resolved";
     const exportBtn = document.getElementById("exportBtn");
