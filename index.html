@@ -1,279 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Listenings</title>
-<meta name="theme-color" content="#090e1a"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="Listenings"/>
-<link rel="manifest" href="manifest.json"/>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#20264A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#090e1a; --surface:#111827; --card:#1a2436;
-  --border:#243044; --accent:#00d4ff; --accent2:#a855f7;
-  --green:#22c55e; --yellow:#f59e0b; --gold:#f5a623;
-  --text:#deeaf8; --muted:#5a7090; --recording:#ef4444;
-}
-*{ box-sizing:border-box; margin:0; padding:0;
-   -webkit-user-select:none; user-select:none;
-   -webkit-tap-highlight-color:transparent; }
-body{
-  background:var(--bg); color:var(--text);
-  font-family:'Nunito',sans-serif; min-height:100vh;
-  display:flex; flex-direction:column;
-}
-body::before{
-  content:''; position:fixed; inset:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(168,85,247,0.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(168,85,247,0.025) 1px,transparent 1px);
-  background-size:36px 36px;
-}
+  :root{
+    --ink:#20264A;
+    --ink-soft:#3B4272;
+    --paper:#EDE7D9;
+    --paper-raised:#F6F2E8;
+    --brass:#B08D57;
+    --brass-bright:#C9A24B;
+    --line:#D8CFB8;
+    --text:#20264A;
+    --text-muted:#6B6F8F;
+    --ok:#4C7A5B;
+    --danger:#A3432F;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .screen{max-width:520px;margin:0 auto;padding:20px 18px 40px;}
 
-/* ── SEAT PICKER ── */
-#seatScreen{ display:none; flex-direction:column; min-height:100vh; }
-.seat-header{ padding:20px 16px 10px; text-align:center; }
-.seat-title{ font-family:'Rajdhani',sans-serif; font-size:1.6rem; font-weight:700; color:var(--accent2); }
-.seat-count{ color:var(--muted); font-size:0.82rem; margin-top:4px; }
-.seat-legend{ color:var(--muted); font-size:0.72rem; margin-top:6px; padding:0 20px; line-height:1.5; }
-.seat-grid{
-  display:grid; grid-template-columns:repeat(2,1fr); gap:12px;
-  padding:14px 16px 30px; max-width:420px; margin:0 auto; width:100%;
-}
-.seat-card{
-  background:var(--card); border:1.5px solid var(--border); border-radius:16px;
-  padding:14px 10px; text-align:center; min-height:92px;
-  display:flex; flex-direction:column; justify-content:center; gap:3px;
-}
-.seat-card.empty{ border-style:dashed; opacity:0.7; }
-.seat-card.taken{ border-color:var(--accent2); }
-.seat-card.role-ev{ border-color:var(--gold); }
-.seat-card.role-s{ opacity:0.85; }
-.seat-id{ font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:700; color:var(--accent); }
-.seat-role-label{ font-size:0.66rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
-.seat-name{ font-size:0.85rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; }
-.seat-empty-hint{ font-size:0.72rem; color:var(--muted); margin-top:2px; }
+  /* Header */
+  .brand{
+    display:flex;align-items:baseline;justify-content:space-between;
+    padding:18px 4px 22px;user-select:none;
+  }
+  .brand-mark{font-size:22px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .brand-name{font-size:19px;margin:0;color:var(--ink);}
+  .brand-tag{font-size:11px;color:var(--text-muted);letter-spacing:.04em;display:block;margin-top:2px;}
 
-/* ── ROOM SCREEN ── */
-#roomScreen{ display:none; flex-direction:column; min-height:100vh; }
-.room-header{
-  position:sticky; top:0; z-index:10;
-  background:rgba(9,14,26,0.95); backdrop-filter:blur(10px);
-  padding:10px 14px; border-bottom:1px solid var(--border);
-  display:flex; justify-content:space-between; align-items:center;
-}
-.room-title-wrap{ display:flex; flex-direction:column; }
-.room-title{ font-family:'Rajdhani',sans-serif; font-size:1.25rem; font-weight:700; color:var(--accent2); }
-.room-sub{ font-size:0.68rem; color:var(--muted); }
-.header-right{ display:flex; gap:8px; align-items:center; }
-.seat-badge{
-  display:flex; align-items:center; gap:6px;
-  background:var(--card); border:1px solid var(--border);
-  border-radius:20px; padding:5px 12px;
-  font-family:'Rajdhani',sans-serif; font-size:0.78rem;
-  font-weight:700; color:var(--accent); letter-spacing:0.3px;
-}
-.out-btn{
-  background:none; border:1px solid var(--border);
-  border-radius:20px; padding:5px 10px;
-  color:var(--muted); font-size:0.72rem; cursor:pointer;
-}
+  /* Entry */
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:22px;
+  }
+  .field-label{font-size:12px;color:var(--text-muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px;display:block;}
+  input[type=text],input[type=number]{
+    width:100%;
+    font-family:'Fraunces',serif;
+    font-size:22px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus{outline:2px solid var(--brass);outline-offset:1px;}
+  button{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    padding:13px 18px;
+  }
+  .btn-primary{background:var(--ink);color:#fff;width:100%;margin-top:14px;}
+  .btn-primary:disabled{opacity:.4;cursor:default;}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+  .btn-ghost.recording{background:var(--danger);color:#fff;border-color:var(--danger);}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .hint{font-size:12.5px;color:var(--text-muted);margin-top:16px;line-height:1.5;}
 
-/* ── RESOLUTION PIN ── */
-#resolutionPin{
-  display:none; margin:10px 12px 0; padding:12px 14px;
-  background:linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04));
-  border:1.5px solid var(--gold); border-radius:14px;
-}
-.pin-label{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.8rem; color:var(--gold); margin-bottom:6px; }
-.pin-row{ display:flex; align-items:center; gap:10px; }
-.pin-btn{
-  width:34px; height:34px; border-radius:50%; border:none; flex-shrink:0;
-  background:var(--gold); color:#000; font-size:0.9rem; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-}
-.pin-dl-btn{
-  border:1px solid var(--gold); background:transparent; color:var(--gold);
-  border-radius:20px; padding:6px 12px; font-size:0.72rem; cursor:pointer; white-space:nowrap;
-}
-.pin-progress-bg{ flex:1; background:var(--border); border-radius:4px; height:5px; overflow:hidden; }
-.pin-progress-fill{ background:var(--gold); height:100%; width:0%; }
+  /* Room header */
+  .room-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .room-title{font-size:20px;margin:0;}
+  .room-sub{font-size:12px;color:var(--text-muted);}
+  .status-pill{
+    font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+    padding:4px 9px;border-radius:20px;
+  }
+  .status-active{background:#DCE7DE;color:var(--ok);}
+  .status-resolved{background:#EFE0D2;color:var(--brass);}
 
-.feed{
-  flex:1; overflow-y:auto; padding:14px 12px 190px;
-  display:flex; flex-direction:column; gap:10px;
-}
-.feed-empty{ text-align:center; color:var(--muted); font-size:0.85rem; padding:40px 20px; }
-.bubble{
-  background:var(--card); border:1.5px solid var(--border); border-radius:16px;
-  padding:12px 14px; max-width:88%;
-}
-.bubble.mine{ align-self:flex-end; border-color:var(--accent2); }
-.bubble.resolution{ align-self:center; max-width:96%; border-color:var(--gold); background:rgba(245,166,35,0.06); }
-.bubble-meta{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px; }
-.bubble-name{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.85rem; color:var(--accent); }
-.bubble.mine .bubble-name{ color:var(--accent2); }
-.bubble.resolution .bubble-name{ color:var(--gold); }
-.bubble-time{ font-size:0.68rem; color:var(--muted); white-space:nowrap; }
-.bubble-play-row{ display:flex; align-items:center; gap:10px; }
-.play-btn{
-  width:38px; height:38px; border-radius:50%; border:none; flex-shrink:0;
-  background:linear-gradient(135deg,var(--accent),#0099bb); color:#000;
-  font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
-}
-.bubble.mine .play-btn{ background:linear-gradient(135deg,var(--accent2),#7c3aed); color:#fff; }
-.bubble.resolution .play-btn{ background:var(--gold); color:#000; }
-.bubble-progress-wrap{ flex:1; }
-.bubble-progress-bg{ background:var(--border); border-radius:4px; height:5px; overflow:hidden; }
-.bubble-progress-fill{ background:var(--accent); height:100%; width:0%; }
-.bubble.mine .bubble-progress-fill{ background:var(--accent2); }
-.bubble.resolution .bubble-progress-fill{ background:var(--gold); }
-.bubble-dur{ font-size:0.68rem; color:var(--muted); margin-top:3px; }
-.dl-btn{
-  margin-top:8px; width:100%; border:1px solid var(--gold); background:transparent; color:var(--gold);
-  border-radius:12px; padding:8px; font-size:0.75rem; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:700;
-}
+  /* Seats grid */
+  .seat-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+    margin-bottom:18px;
+  }
+  .seat{
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    border-radius:9px;
+    padding:12px 6px;
+    text-align:center;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .seat-code{font-family:'Fraunces',serif;font-size:17px;display:block;}
+  .seat-state{font-size:10px;color:var(--text-muted);display:block;margin-top:3px;letter-spacing:.03em;text-transform:uppercase;}
+  .seat.mine{border-color:var(--ink);background:var(--ink);}
+  .seat.mine .seat-code,.seat.mine .seat-state{color:#fff;}
+  .seat.taken:not(.mine){opacity:.5;cursor:default;}
+  .seat.silent{border-style:dashed;}
 
-/* ── RECORD DOCK ── */
-.record-dock{
-  position:fixed; bottom:0; left:0; right:0; z-index:20;
-  background:rgba(9,14,26,0.97); backdrop-filter:blur(10px);
-  border-top:1px solid var(--border);
-  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
-  display:flex; flex-direction:column; align-items:center; gap:8px;
-}
-.rec-timer-line{ font-size:0.78rem; color:var(--muted); font-family:'Rajdhani',sans-serif; min-height:1.2em; }
-.rec-bar-track{ width:100%; max-width:360px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
-.rec-bar-fill{ height:100%; width:0%; background:var(--recording); }
-.rec-btn-row{ display:flex; gap:14px; align-items:center; }
-.rec-main-btn{
-  width:72px; height:72px; border-radius:50%; border:none;
-  background:linear-gradient(135deg,var(--accent2),#7c3aed);
-  color:#fff; font-family:'Rajdhani',sans-serif; font-size:0.72rem; font-weight:700;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  box-shadow:0 0 24px rgba(168,85,247,0.4);
-}
-.rec-main-btn.recording{ background:var(--recording); animation:pulseRec 1s infinite; box-shadow:0 0 24px rgba(239,68,68,0.5); }
-.res-btn{
-  width:72px; height:72px; border-radius:50%; border:2px solid var(--gold);
-  background:transparent; color:var(--gold); font-family:'Rajdhani',sans-serif;
-  font-size:0.66rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
-}
-.res-btn.recording{ background:var(--recording); border-color:var(--recording); color:#fff; animation:pulseRec 1s infinite; }
-@keyframes pulseRec{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
-.rec-main-btn:disabled, .res-btn:disabled{ opacity:0.4; }
-.rec-hint{ font-size:0.7rem; color:var(--muted); text-align:center; }
-.listen-only-note{ font-size:0.78rem; color:var(--muted); text-align:center; padding:4px 0; }
+  /* Thread */
+  .thread-wrap{
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .thread{
+    max-height:52vh;
+    overflow-y:auto;
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .msg{max-width:88%;}
+  .msg-meta{font-size:11px;color:var(--text-muted);margin-bottom:2px;}
+  .msg-body{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:9px 12px;
+  }
+  .msg.self .msg-body{background:#E4E9F5;border-color:#C7D0EA;}
+  .msg.resolution .msg-body{background:#FBF1DF;border-color:var(--brass);}
+  .msg.resolution .msg-meta{color:var(--brass);font-weight:600;}
+  .empty-thread{color:var(--text-muted);font-size:13.5px;text-align:center;padding:30px 10px;}
 
-/* ── SEAT NAME MODAL ── */
-#seatNameModal{
-  display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:150;
-  align-items:flex-end; justify-content:center;
-}
-#seatNameModal.open{ display:flex; }
-.seat-name-sheet{
-  background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px calc(22px + env(safe-area-inset-bottom));
-  width:100%; max-width:460px; display:flex; flex-direction:column; gap:12px;
-}
-.seat-name-sheet h3{ font-family:'Rajdhani',sans-serif; color:var(--accent2); font-size:1.15rem; }
-.seat-name-sheet p{ color:var(--muted); font-size:0.8rem; margin-top:-6px; }
-.seat-name-input{
-  width:100%; background:var(--card); border:1.5px solid var(--border);
-  border-radius:14px; padding:14px 18px; color:var(--text);
-  font-size:1rem; outline:none; font-family:'Nunito',sans-serif;
-  -webkit-user-select:text !important; user-select:text !important;
-}
-.seat-name-save{
-  width:100%; padding:14px; border:none; border-radius:14px;
-  background:linear-gradient(135deg,var(--accent2),#7c3aed); color:#fff;
-  font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:700; cursor:pointer;
-}
-.seat-name-cancel{
-  width:100%; padding:12px; border:1px solid var(--border); border-radius:14px;
-  background:transparent; color:var(--muted); font-size:0.9rem; cursor:pointer;
-}
+  .msg-audio-row{display:flex;align-items:center;gap:8px;}
+  .play-btn{
+    width:30px;height:30px;border-radius:50%;border:none;flex-shrink:0;
+    background:var(--ink);color:#fff;font-size:13px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .msg.self .play-btn{background:var(--ink-soft);}
+  .msg.resolution .play-btn{background:var(--brass);color:#000;}
+  .msg-progress-wrap{flex:1;}
+  .msg-progress-bg{background:var(--line);border-radius:4px;height:4px;overflow:hidden;}
+  .msg-progress-fill{background:var(--ink);height:100%;width:0%;}
+  .msg.self .msg-progress-fill{background:var(--ink-soft);}
+  .msg.resolution .msg-progress-fill{background:var(--brass);}
+  .msg-dur{font-size:10.5px;color:var(--text-muted);margin-top:2px;}
+  .msg-dl{margin-top:8px;width:100%;border:1px solid var(--brass);background:transparent;color:var(--brass);border-radius:8px;padding:7px;font-size:12px;}
 
-#toast{
-  position:fixed; left:50%; bottom:200px; transform:translateX(-50%) translateY(20px);
-  opacity:0; background:var(--card); border:1px solid var(--border); color:var(--text);
-  border-radius:12px; padding:10px 20px; z-index:200;
-  transition:0.3s; pointer-events:none; font-size:0.85rem; white-space:nowrap;
-}
-#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .composer{
+    display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);align-items:center;
+  }
+  .composer-voice{flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:0;}
+  .rec-timer-line{font-size:11px;color:var(--text-muted);min-height:14px;}
+  .rec-bar-track{width:100%;height:3px;background:var(--line);border-radius:2px;overflow:hidden;}
+  .rec-bar-fill{height:100%;width:0%;background:var(--danger);}
+  .rec-btn{padding:0 16px;height:38px;background:var(--ink);color:#fff;white-space:nowrap;}
+  .rec-btn.recording{background:var(--danger);}
+  .rec-btn:disabled{opacity:.4;}
+  .watch-only{padding:12px;text-align:center;font-size:12.5px;color:var(--text-muted);border-top:1px solid var(--line);}
+
+  .toolbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .toolbar button{flex:1;}
+
+  /* Admin overlay */
+  .overlay{
+    position:fixed;inset:0;background:rgba(32,38,74,.72);
+    display:flex;align-items:flex-end;justify-content:center;z-index:50;
+  }
+  .sheet{
+    background:var(--paper-raised);
+    width:100%;max-width:520px;
+    border-radius:16px 16px 0 0;
+    padding:20px;
+  }
+  .sheet h3{margin:0 0 14px;font-size:17px;}
+  .confirm-box{
+    border:1px solid var(--danger);
+    background:#FBE9E4;
+    border-radius:8px;
+    padding:12px;
+    font-size:13.5px;
+    margin-top:12px;
+    line-height:1.5;
+  }
+  .row{display:flex;gap:8px;margin-top:10px;}
+  .row button{flex:1;}
+  .link-line{
+    display:flex;gap:8px;align-items:center;
+    background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:9px 11px;margin-top:6px;font-size:13px;color:var(--text-muted);
+  }
 </style>
 </head>
 <body>
 
-<!-- SEAT PICKER (landing screen — room comes from the shared link) -->
-<div id="seatScreen">
-  <div class="seat-header">
-    <div class="seat-title">🎙️ ROOM <span id="seatScreenRoomNum">--</span></div>
-    <div class="seat-count" id="seatCountLabel">Loading seats…</div>
-    <div class="seat-legend">EV Evaluator · P1/P2 Parties · A1/A2 Advocates · S1–S5 Sakshi (listen-only witnesses)</div>
-  </div>
-  <div class="seat-grid" id="seatGrid"></div>
-</div>
+<div class="screen">
 
-<!-- ROOM -->
-<div id="roomScreen">
-  <div class="room-header">
-    <div class="room-title-wrap">
-      <div class="room-title">🎙️ ROOM <span id="roomScreenRoomNum">--</span> <span id="prayerTap" style="opacity:0.55;cursor:pointer">🙏</span></div>
-      <div class="room-sub">LISTENINGS</div>
+  <div class="brand">
+    <div>
+      <h1 class="brand-name">Listenings</h1>
+      <span class="brand-tag">No text, only voice.</span>
     </div>
-    <div class="header-right">
-      <div class="seat-badge" id="mySeatBadge">--</div>
-      <button class="out-btn" id="leaveSeatBtn">LEAVE</button>
+    <div class="brand-mark" id="brandMark">🙏</div>
+  </div>
+
+  <!-- ENTRY VIEW -->
+  <div id="entryView" class="card">
+    <span class="field-label">Room number</span>
+    <input type="number" id="roomInput" placeholder="e.g. 1" inputmode="numeric">
+    <button class="btn-primary" id="enterRoomBtn">Enter room</button>
+    <p class="hint">Sit at the seat you were told to. Every room has the same ten settlement seats — Evaluator, two Parties, two Advocates, five Sakshi (listen-only).</p>
+  </div>
+
+  <!-- ROOM VIEW -->
+  <div id="roomView" style="display:none;">
+    <div class="room-head">
+      <div>
+        <h2 class="room-title" id="roomTitleText">Room —</h2>
+        <span class="room-sub" id="roomSub">loading…</span>
+      </div>
+      <span class="status-pill status-active" id="statusPill">Active</span>
     </div>
-  </div>
 
-  <div id="resolutionPin">
-    <div class="pin-label">🏛 RESOLUTION — EVALUATOR'S VOICE DECISION</div>
-    <div class="pin-row">
-      <button class="pin-btn" id="pinPlayBtn">▶</button>
-      <div class="pin-progress-bg"><div class="pin-progress-fill" id="pinProgressFill"></div></div>
-      <button class="pin-dl-btn" id="pinDlBtn">⬇ SAVE</button>
+    <div class="seat-grid" id="seatGrid"></div>
+
+    <div class="thread-wrap">
+      <div class="thread" id="thread"><div class="empty-thread">No voices yet.</div></div>
+      <div class="composer" id="composer" style="display:none;">
+        <div class="composer-voice">
+          <div class="rec-timer-line" id="recTimerLine"></div>
+          <div class="rec-bar-track"><div class="rec-bar-fill" id="recBarFill"></div></div>
+        </div>
+        <button class="rec-btn" id="recMainBtn">Hold to speak</button>
+      </div>
+      <div class="watch-only" id="watchOnly" style="display:none;">You are seated as a silent witness — you can listen, but this seat does not speak.</div>
     </div>
-  </div>
 
-  <div class="feed" id="feed">
-    <div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>
-  </div>
-</div>
+    <div class="toolbar" id="evaluatorTools" style="display:none;">
+      <button class="btn-ghost" id="resolveBtn">Hold for resolution</button>
+      <button class="btn-ghost" id="exportBtn" style="display:none;">Save resolution</button>
+    </div>
 
-<!-- RECORD DOCK (shown only inside room, hidden for Sakshi) -->
-<div class="record-dock" id="recordDock" style="display:none">
-  <div class="rec-timer-line" id="recTimerLine"></div>
-  <div class="rec-bar-track"><div class="rec-bar-fill" id="recBarFill"></div></div>
-  <div class="rec-btn-row">
-    <button class="rec-main-btn" id="recMainBtn">HOLD<br>TO SPEAK</button>
-    <button class="res-btn" id="resMainBtn" style="display:none">HOLD FOR<br>RESOLUTION</button>
-  </div>
-  <div class="rec-hint" id="recHint">Press and hold · release to send to the room</div>
-</div>
-<div class="listen-only-note" id="listenOnlyNote" style="display:none">You are a Sakshi (silent witness) — you can listen, but this seat does not speak.</div>
-
-<!-- SEAT NAME MODAL -->
-<div id="seatNameModal">
-  <div class="seat-name-sheet">
-    <h3 id="seatModalTitle">Sit at this seat?</h3>
-    <p id="seatModalSub"></p>
-    <input id="seatNameInput" class="seat-name-input" type="text" placeholder="Your name">
-    <button class="seat-name-save" id="seatNameSaveBtn">SIT DOWN →</button>
-    <button class="seat-name-cancel" id="seatNameCancelBtn">Cancel</button>
+    <button class="btn-ghost" style="width:100%;margin-top:14px;" id="leaveRoomBtn">Leave room</button>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- ADMIN SHEET -->
+<div class="overlay" id="adminOverlay" style="display:none;">
+  <div class="sheet">
+    <h3>Admin</h3>
+    <span class="field-label">Room to manage</span>
+    <input type="number" id="adminRoomInput" placeholder="Room number" inputmode="numeric">
+    <div class="link-line" id="adminRoomStatus">—</div>
+    <div class="row">
+      <button class="btn-danger" id="adminClearBtn">Clear room</button>
+      <button class="btn-ghost" id="adminCloseBtn">Close</button>
+    </div>
+    <div class="confirm-box" id="adminConfirmBox" style="display:none;"></div>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
-  getDatabase, ref, set, get, remove, push, onChildAdded
+  getDatabase, ref, set, get, remove, push, onValue, onChildAdded
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 // ── CONFIG (same Firebase project + Cloudinary account as Over To You) ──
@@ -290,64 +292,40 @@ const CLOUDINARY_CLOUD  = "dqwaiio4d";
 const CLOUDINARY_PRESET = "oty123";
 const MAX_RECORD_SECS   = 90;
 
-// ── SEAT / ROLE MODEL (settlement roles, voice-only — identical in every room) ──
+// ── SEAT MODEL (settlement roles, identical in every room) ──
 const SEAT_ROLES = ["EV","P1","P2","A1","A2","S1","S2","S3","S4","S5"];
-const ROLE_LABELS = {
-  EV:"Evaluator", P1:"Party 1", P2:"Party 2",
-  A1:"Advocate 1", A2:"Advocate 2",
-  S1:"Sakshi 1", S2:"Sakshi 2", S3:"Sakshi 3", S4:"Sakshi 4", S5:"Sakshi 5"
-};
-function seatIds(){ return SEAT_ROLES; }
-function seatRoleLabel(id){ return ROLE_LABELS[id] || id; }
 function isSakshi(id){ return id && id.startsWith("S"); }
-function isEvaluator(id){ return id==="EV"; }
+function isEvaluator(id){ return id === "EV"; }
 function padRoom(n){ return String(n).padStart(2,"0"); }
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-// ── ROOM NUMBER (comes from the link the convener shares, e.g. ?room=13) ──
-function roomNumFromURL(){
-  const raw = new URLSearchParams(location.search).get("room");
-  const n = parseInt(raw, 10);
-  return (raw && !isNaN(n) && n>=1 && n<=99) ? padRoom(n) : null;
-}
-let roomNum = roomNumFromURL() || localStorage.getItem("listenings_room_num") || "01";
-localStorage.setItem("listenings_room_num", roomNum);
-if (!roomNumFromURL()){
-  const url = new URL(location.href);
-  url.searchParams.set("room", parseInt(roomNum,10));
-  history.replaceState(null, "", url);
-}
+// per-device id, used only to tell "mine" apart from other seats — no accounts, no names
+let clientId = localStorage.getItem("listenings_client_id");
+if (!clientId){ clientId = (crypto.randomUUID ? crypto.randomUUID() : "c"+Date.now()+Math.random()); localStorage.setItem("listenings_client_id", clientId); }
 
 // ── STATE ─────────────────────────────────────
-let mySeatId       = null;
-let myName         = localStorage.getItem("listenings_name")  || null;
-let pendingSeatId  = null;
-let seatsCache     = {};
-let mediaStream    = null;
-let mediaRecorder  = null;
-let audioChunks    = [];
-let isRecording    = false;
+let currentRoomId    = null;
+let currentSeatId    = null;
+let seatsUnsub        = null;
+let mediaStream       = null;
+let mediaRecorder     = null;
+let audioChunks       = [];
+let isRecording       = false;
 let recordingIsResolution = false;
-let recTimerInterval = null;
-let recAutoStopTimer = null;
+let recTimerInterval  = null;
+let recAutoStopTimer  = null;
 let recSecondsElapsed = 0;
-let currentlyPlaying  = null; // {audio, btn}
-let feedAttached      = false;
+let currentlyPlaying  = null;
 let latestResolution  = null;
-let pinAudio          = null;
 
-function roomPath(){ return "listenings_rooms/"+roomNum; }
-function seatStorageKey(){ return "listenings_seat_"+roomNum; }
+function roomPath(){ return "listenings_rooms/"+currentRoomId; }
 
 // ── HELPERS ───────────────────────────────────
-function toast(msg, dur){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"), dur||3200); }
-function escapeHtml(s){ if(!s)return""; return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+function escapeHtml(s){ if(!s)return""; return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function fmtTime(s){ if(!s||isNaN(s))return"0:00"; return String(Math.floor(s/60)).padStart(2,"0")+":"+String(Math.floor(s)%60).padStart(2,"0"); }
-function fmtClock(ts){ return new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
-function vibrateStart(){ try{ if(navigator.vibrate) navigator.vibrate(80); }catch(e){} }
-function vibrateSent(){ try{ if(navigator.vibrate) navigator.vibrate([60,40,60]); }catch(e){} }
+function padRoomIdFromInput(n){ return padRoom(parseInt(n,10)); }
 
 // ── MICROPHONE ────────────────────────────────
 async function initMicrophone(){
@@ -357,8 +335,11 @@ async function initMicrophone(){
     });
   } catch(err){
     try { mediaStream = await navigator.mediaDevices.getUserMedia({audio:true}); }
-    catch(e){ toast("❌ Microphone access denied — check browser permissions"); }
+    catch(e){ alert("Microphone access denied — check browser permissions."); }
   }
+}
+function stopMic(){
+  if (mediaStream){ mediaStream.getTracks().forEach(t=>t.stop()); mediaStream=null; }
 }
 
 // ── MEDIA RECORDER ────────────────────────────
@@ -378,14 +359,14 @@ function extForRecorder(mr){
   return ".webm";
 }
 
-// ── UPLOAD ────────────────────────────────────
+// ── UPLOAD / DOWNLOAD ─────────────────────────
 async function uploadAudio(blob, ext, isResolution){
   if (!blob||blob.size===0) throw new Error("Audio blob is empty");
   const fd=new FormData();
-  fd.append("file", new File([blob], roomNum+"_"+mySeatId+"_"+Date.now()+ext, {type:blob.type||"audio/webm"}));
+  fd.append("file", new File([blob], currentRoomId+"_"+currentSeatId+"_"+Date.now()+ext, {type:blob.type||"audio/webm"}));
   fd.append("upload_preset", CLOUDINARY_PRESET);
   fd.append("resource_type","video");
-  fd.append("tags", "autoclear,listenings,room"+roomNum+(isResolution?",resolution":""));
+  fd.append("tags", "autoclear,listenings,room"+currentRoomId+(isResolution?",resolution":""));
   let res;
   try { res=await fetch("https://api.cloudinary.com/v1_1/"+CLOUDINARY_CLOUD+"/video/upload",{method:"POST",body:fd}); }
   catch(e){ throw new Error("Network error: "+e.message); }
@@ -398,8 +379,6 @@ async function uploadAudio(blob, ext, isResolution){
   if (!data.secure_url) throw new Error("No URL in response");
   return data.secure_url;
 }
-
-// ── DOWNLOAD (export resolution / any voice, to device) ──
 async function downloadAudio(url, filename){
   try {
     const res=await fetch(url);
@@ -409,126 +388,149 @@ async function downloadAudio(url, filename){
     a.href=objUrl; a.download=filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(objUrl);
-    toast("⬇ Saved to device");
-  } catch(e){ toast("❌ Download failed — try long-press on the audio instead"); }
+  } catch(e){ alert("Download failed — try long-press on the audio instead."); }
 }
 
-// ── SEAT PICKER (landing screen) ──────────────
-async function loadSeatScreen(){
-  document.getElementById("seatScreen").style.display="flex";
-  document.getElementById("seatScreenRoomNum").textContent = roomNum;
-  document.getElementById("seatCountLabel").textContent = "Loading seats…";
-  try {
-    const snap = await get(ref(db, roomPath()+"/seats"));
-    seatsCache = snap.exists()? snap.val() : {};
-    renderSeatGrid();
-  } catch(err){
+// ── ENTRY ─────────────────────────────────────
+const entryView = document.getElementById("entryView");
+const roomView  = document.getElementById("roomView");
+const roomInput = document.getElementById("roomInput");
+
+document.getElementById("enterRoomBtn").addEventListener("click", ()=>{
+  const n = roomInput.value.trim();
+  if (!n) return;
+  goToRoom(n);
+});
+
+const initParams = new URLSearchParams(location.search);
+if (initParams.get("room")){
+  roomInput.value = initParams.get("room");
+  goToRoom(initParams.get("room"));
+}
+
+async function goToRoom(n){
+  const num = parseInt(n,10);
+  if (isNaN(num) || num<1 || num>99){ alert("Enter a room number, 1–99"); return; }
+  currentRoomId = padRoom(num);
+  history.replaceState(null, "", "?room="+num);
+  entryView.style.display = "none";
+  roomView.style.display  = "block";
+  document.getElementById("roomTitleText").textContent = "Room "+currentRoomId;
+  document.getElementById("roomSub").textContent = "loading…";
+
+  currentSeatId = localStorage.getItem("listenings_seat_"+currentRoomId) || null;
+  if (currentSeatId && !isSakshi(currentSeatId)) await initMicrophone();
+
+  if (seatsUnsub) seatsUnsub();
+  seatsUnsub = onValue(ref(db, roomPath()+"/seats"), (snap)=>{
+    renderRoom(snap.exists()? snap.val() : {});
+  }, (err)=>{
     console.error(err);
-    document.getElementById("seatCountLabel").textContent = "⚠️ Could not load seats — check connection";
-    toast("❌ "+(err.message||"Failed to load seats"));
-  }
-}
-function renderSeatGrid(){
-  const grid=document.getElementById("seatGrid");
-  grid.innerHTML="";
-  let taken=0;
-  seatIds().forEach(id=>{
-    const seat=seatsCache[id];
-    const card=document.createElement("div");
-    card.className="seat-card"+(seat?" taken":" empty")+(isEvaluator(id)?" role-ev":"")+(isSakshi(id)?" role-s":"");
-    if (seat) taken++;
-    card.innerHTML = seat
-      ? '<div class="seat-id">'+id+'</div><div class="seat-role-label">'+seatRoleLabel(id)+'</div><div class="seat-name">'+escapeHtml(seat.name)+'</div>'
-      : '<div class="seat-id">'+id+'</div><div class="seat-role-label">'+seatRoleLabel(id)+'</div><div class="seat-empty-hint">Tap to sit</div>';
-    card.addEventListener("click", ()=>{
-      if (seat){ toast(escapeHtml(seat.name)+" is already seated as "+seatRoleLabel(id)); return; }
-      openSeatNameModal(id);
-    });
-    grid.appendChild(card);
+    document.getElementById("roomSub").textContent = "⚠️ Could not load seats";
   });
-  document.getElementById("seatCountLabel").textContent = taken+" / "+SEAT_ROLES.length+" seated in Room "+roomNum;
+
+  attachFeedListener();
 }
-function openSeatNameModal(seatId){
-  pendingSeatId=seatId;
-  document.getElementById("seatModalTitle").textContent = "Sit as "+seatRoleLabel(seatId)+" ("+seatId+")?";
-  document.getElementById("seatModalSub").textContent = isSakshi(seatId)
-    ? "Sakshi seats listen only — you won't be able to speak in the room."
-    : "";
-  document.getElementById("seatNameInput").value = myName || "";
-  document.getElementById("seatNameModal").classList.add("open");
+
+// ── SEATS ─────────────────────────────────────
+function renderRoom(seatsData){
+  const grid = document.getElementById("seatGrid");
+  grid.innerHTML = "";
+  SEAT_ROLES.forEach(id=>{
+    const owner = seatsData ? seatsData[id] : null;
+    const mine  = currentSeatId === id;
+    const taken = !!owner;
+    const div = document.createElement("div");
+    div.className = "seat"+(mine?" mine":"")+(taken&&!mine?" taken":"")+(isSakshi(id)?" silent":"");
+    div.innerHTML = '<span class="seat-code">'+id+'</span><span class="seat-state">'+(mine?"You":(taken?"Taken":"Empty"))+'</span>';
+    div.addEventListener("click", ()=>handleSeatTap(id, owner, mine));
+    grid.appendChild(div);
+  });
+
+  document.getElementById("roomSub").textContent = currentSeatId ? ("Seated as "+currentSeatId) : "Choose your seat";
+
+  const seated = !!currentSeatId;
+  const sakshi = seated && isSakshi(currentSeatId);
+  document.getElementById("composer").style.display   = (seated && !sakshi) ? "flex"  : "none";
+  document.getElementById("watchOnly").style.display   = (seated && sakshi) ? "block" : "none";
+  document.getElementById("evaluatorTools").style.display = (currentSeatId==="EV") ? "flex" : "none";
 }
-document.getElementById("seatNameCancelBtn").onclick = ()=>{ document.getElementById("seatNameModal").classList.remove("open"); pendingSeatId=null; };
-document.getElementById("seatNameSaveBtn").onclick = async ()=>{
-  const name=document.getElementById("seatNameInput").value.trim();
-  if (name.length<2){ toast("❌ Enter at least 2 letters"); return; }
-  const seatId=pendingSeatId;
+
+async function handleSeatTap(seatId, ownerVal, mine){
+  if (mine){
+    if (!confirm("Leave this seat and free it? You can then tap the correct one.")) return;
+    await remove(ref(db, roomPath()+"/seats/"+seatId));
+    localStorage.removeItem("listenings_seat_"+currentRoomId);
+    currentSeatId = null;
+    stopMic();
+    return;
+  }
+  if (ownerVal) return; // taken by someone else
   const snap = await get(ref(db, roomPath()+"/seats/"+seatId));
-  if (snap.exists()){ toast("❌ Someone just took that seat"); document.getElementById("seatNameModal").classList.remove("open"); renderSeatGrid(); return; }
-  await set(ref(db, roomPath()+"/seats/"+seatId), { name, role:seatRoleLabel(seatId), claimedAt: Date.now() });
-  mySeatId=seatId; myName=name;
-  localStorage.setItem(seatStorageKey(), seatId);
-  localStorage.setItem("listenings_name", name);
-  document.getElementById("seatNameModal").classList.remove("open");
-  enterRoom();
-};
-
-// ── ROOM ──────────────────────────────────────
-async function enterRoom(){
-  document.getElementById("seatScreen").style.display="none";
-  document.getElementById("roomScreen").style.display="flex";
-  document.getElementById("roomScreenRoomNum").textContent = roomNum;
-  document.getElementById("mySeatBadge").textContent = seatRoleLabel(mySeatId)+" · "+myName;
-
-  const sakshi = isSakshi(mySeatId);
-  document.getElementById("recordDock").style.display = sakshi ? "none" : "flex";
-  document.getElementById("listenOnlyNote").style.display = sakshi ? "block" : "none";
-  document.getElementById("resMainBtn").style.display = isEvaluator(mySeatId) ? "flex" : "none";
-
-  if (!sakshi) await initMicrophone();
-  if (!feedAttached){ feedAttached=true; attachFeedListener(); }
+  if (snap.exists()){ alert("Someone just took that seat."); return; }
+  await set(ref(db, roomPath()+"/seats/"+seatId), { claimedBy: clientId, claimedAt: Date.now() });
+  currentSeatId = seatId;
+  localStorage.setItem("listenings_seat_"+currentRoomId, seatId);
+  if (!isSakshi(seatId)) await initMicrophone();
 }
-document.getElementById("leaveSeatBtn").onclick = async ()=>{
-  if (!confirm("Leave your seat as "+seatRoleLabel(mySeatId)+" in Room "+roomNum+"? Someone else can take it.")) return;
-  try { await remove(ref(db, roomPath()+"/seats/"+mySeatId)); } catch(e){}
-  localStorage.removeItem(seatStorageKey());
-  mySeatId=null;
-  if (mediaStream) mediaStream.getTracks().forEach(t=>t.stop());
-  document.getElementById("recordDock").style.display="none";
-  document.getElementById("roomScreen").style.display="none";
-  loadSeatScreen();
-};
 
-// ── FEED ──────────────────────────────────────
+document.getElementById("leaveRoomBtn").addEventListener("click", async ()=>{
+  if (currentSeatId){
+    await remove(ref(db, roomPath()+"/seats/"+currentSeatId));
+    localStorage.removeItem("listenings_seat_"+currentRoomId);
+    currentSeatId = null;
+  }
+  stopMic();
+  if (seatsUnsub){ seatsUnsub(); seatsUnsub=null; }
+  latestResolution = null;
+  roomView.style.display  = "none";
+  entryView.style.display = "block";
+  history.replaceState(null, "", location.pathname);
+});
+
+// ── THREAD (voice bubbles) ────────────────────
 function attachFeedListener(){
   const msgsRef = ref(db, roomPath()+"/messages");
   onChildAdded(msgsRef, (snap)=>{
-    document.getElementById("feedEmpty").style.display="none";
-    const msg=snap.val();
-    appendBubble(snap.key, msg);
-    if (msg.isResolution) updateResolutionPin(msg);
+    const empty = document.querySelector("#thread .empty-thread");
+    if (empty) empty.remove();
+    appendBubble(snap.key, snap.val());
   });
 }
 function appendBubble(key, msg){
-  const feed=document.getElementById("feed");
-  const mine = msg.seat===mySeatId;
-  const bubble=document.createElement("div");
-  bubble.className="bubble"+(mine?" mine":"")+(msg.isResolution?" resolution":"");
-  bubble.dataset.key=key;
-  bubble.innerHTML =
-    '<div class="bubble-meta"><span class="bubble-name">'+(msg.isResolution?"🏛 RESOLUTION — ":"")+msg.seat+' · '+escapeHtml(msg.name)+'</span><span class="bubble-time">'+fmtClock(msg.timestamp)+'</span></div>'+
-    '<div class="bubble-play-row"><button class="play-btn">▶</button>'+
-    '<div class="bubble-progress-wrap"><div class="bubble-progress-bg"><div class="bubble-progress-fill"></div></div>'+
-    '<div class="bubble-dur">'+fmtTime(msg.duration||0)+'</div></div></div>'+
-    (msg.isResolution ? '<button class="dl-btn">⬇ SAVE RESOLUTION TO DEVICE</button>' : '');
-  const playBtn=bubble.querySelector(".play-btn");
-  const fillEl =bubble.querySelector(".bubble-progress-fill");
-  const durEl  =bubble.querySelector(".bubble-dur");
-  const totalDur = msg.duration||0;
+  const thread = document.getElementById("thread");
+  const self = msg.seat === currentSeatId;
+  const div = document.createElement("div");
+  div.className = "msg"+(self?" self":"")+(msg.isResolution?" resolution":"");
+  div.dataset.key = key;
+  const label = (msg.isResolution ? "Resolution — " : "") + msg.seat;
+  const totalDur = msg.duration || 0;
+  div.innerHTML =
+    '<div class="msg-meta"></div>'+
+    '<div class="msg-body"><div class="msg-audio-row">'+
+      '<button class="play-btn">▶</button>'+
+      '<div class="msg-progress-wrap"><div class="msg-progress-bg"><div class="msg-progress-fill"></div></div>'+
+      '<div class="msg-dur">'+fmtTime(totalDur)+'</div></div>'+
+    '</div>'+
+    (msg.isResolution ? '<button class="msg-dl">Save resolution to device</button>' : '')+
+    '</div>';
+  div.querySelector(".msg-meta").textContent = label;
+  const playBtn=div.querySelector(".play-btn");
+  const fillEl =div.querySelector(".msg-progress-fill");
+  const durEl  =div.querySelector(".msg-dur");
   playBtn.addEventListener("click", ()=>togglePlay(msg.audioUrl, playBtn, fillEl, durEl, totalDur));
-  const dlBtn=bubble.querySelector(".dl-btn");
-  if (dlBtn) dlBtn.addEventListener("click", ()=>downloadAudio(msg.audioUrl, "resolution_room"+roomNum+"_"+msg.timestamp+".webm"));
-  feed.appendChild(bubble);
-  feed.scrollTop = feed.scrollHeight;
+  const dlBtn=div.querySelector(".msg-dl");
+  if (dlBtn) dlBtn.addEventListener("click", ()=>downloadAudio(msg.audioUrl, "resolution_room"+currentRoomId+"_"+msg.timestamp+".webm"));
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+
+  if (msg.isResolution){
+    latestResolution = msg;
+    document.getElementById("statusPill").textContent = "Resolved";
+    document.getElementById("statusPill").className = "status-pill status-resolved";
+    const exportBtn = document.getElementById("exportBtn");
+    exportBtn.style.display = (currentSeatId==="EV") ? "inline-block" : "none";
+  }
 }
 function togglePlay(url, btn, fillEl, durEl, totalDur){
   if (currentlyPlaying && currentlyPlaying.btn===btn){
@@ -542,46 +544,19 @@ function togglePlay(url, btn, fillEl, durEl, totalDur){
   btn.textContent="⏸";
   audio.addEventListener("timeupdate", ()=>{
     const d = audio.duration || totalDur || 1;
-    if (fillEl) fillEl.style.width = Math.min(100,(audio.currentTime/d)*100)+"%";
-    if (durEl) durEl.textContent = fmtTime(audio.currentTime)+" / "+fmtTime(totalDur||audio.duration||0);
+    fillEl.style.width = Math.min(100,(audio.currentTime/d)*100)+"%";
+    durEl.textContent = fmtTime(audio.currentTime)+" / "+fmtTime(totalDur||audio.duration||0);
   });
-  audio.addEventListener("ended", ()=>{ btn.textContent="▶"; if(fillEl)fillEl.style.width="0%"; if(durEl)durEl.textContent=fmtTime(totalDur); currentlyPlaying=null; });
-  audio.addEventListener("error", ()=>{ btn.textContent="▶"; toast("Playback failed"); currentlyPlaying=null; });
-  audio.play().catch(()=>{ btn.textContent="▶"; toast("Playback failed"); });
+  audio.addEventListener("ended", ()=>{ btn.textContent="▶"; fillEl.style.width="0%"; durEl.textContent=fmtTime(totalDur); currentlyPlaying=null; });
+  audio.addEventListener("error", ()=>{ btn.textContent="▶"; currentlyPlaying=null; });
+  audio.play().catch(()=>{ btn.textContent="▶"; });
 }
-
-// ── RESOLUTION PIN ─────────────────────────────
-function updateResolutionPin(msg){
-  latestResolution = msg;
-  document.getElementById("resolutionPin").style.display="block";
-  document.getElementById("pinProgressFill").style.width="0%";
-  document.getElementById("pinPlayBtn").textContent="▶";
-}
-document.getElementById("pinPlayBtn").addEventListener("click", ()=>{
-  if (!latestResolution) return;
-  const fillEl=document.getElementById("pinProgressFill");
-  const btn=document.getElementById("pinPlayBtn");
-  if (pinAudio && !pinAudio.paused){ pinAudio.pause(); btn.textContent="▶"; return; }
-  if (pinAudio){ pinAudio.play(); btn.textContent="⏸"; return; }
-  pinAudio=new Audio(latestResolution.audioUrl);
-  btn.textContent="⏸";
-  pinAudio.addEventListener("timeupdate", ()=>{
-    const d=pinAudio.duration||latestResolution.duration||1;
-    fillEl.style.width=Math.min(100,(pinAudio.currentTime/d)*100)+"%";
-  });
-  pinAudio.addEventListener("ended", ()=>{ btn.textContent="▶"; fillEl.style.width="0%"; pinAudio=null; });
-  pinAudio.play().catch(()=>toast("Playback failed"));
-});
-document.getElementById("pinDlBtn").addEventListener("click", ()=>{
-  if (!latestResolution) return;
-  downloadAudio(latestResolution.audioUrl, "resolution_room"+roomNum+"_"+latestResolution.timestamp+".webm");
-});
 
 // ── RECORDING (press and hold; normal or resolution) ──────
-const recBtn=document.getElementById("recMainBtn");
-const resBtn=document.getElementById("resMainBtn");
+const recBtn = document.getElementById("recMainBtn");
+const resBtn = document.getElementById("resolveBtn");
 function startRecording(asResolution){
-  if (!mediaStream){ toast("⏳ Microphone not ready"); return; }
+  if (!mediaStream){ alert("Microphone not ready yet — try again in a second."); return; }
   if (isRecording) return;
   recordingIsResolution = !!asResolution;
   const activeBtn = asResolution ? resBtn : recBtn;
@@ -590,13 +565,13 @@ function startRecording(asResolution){
     mediaRecorder=createMediaRecorder(mediaStream);
     mediaRecorder.ondataavailable=(ev)=>{ if(ev.data&&ev.data.size>0) audioChunks.push(ev.data); };
     mediaRecorder.onstop=sendRecording;
-    mediaRecorder.onerror=(err)=>{ console.error(err); toast("Recording error — try again"); stopRecording(false); };
+    mediaRecorder.onerror=(err)=>{ console.error(err); stopRecording(false); };
     mediaRecorder.start(250);
-    vibrateStart(); isRecording=true;
+    isRecording=true;
     activeBtn.classList.add("recording");
-    activeBtn.innerHTML = asResolution ? "STOP<br>RESOLUTION" : "STOP<br>SPEAKING";
+    activeBtn.textContent = asResolution ? "Recording resolution…" : "Recording…";
     startRecTimer();
-  } catch(err){ console.error(err); toast("❌ Could not start recording"); }
+  } catch(err){ console.error(err); alert("Could not start recording."); }
 }
 function stopRecording(shouldSend){
   if (!isRecording) return;
@@ -606,8 +581,8 @@ function stopRecording(shouldSend){
     mediaRecorder.stop();
   }
   stopRecTimer();
-  recBtn.classList.remove("recording"); recBtn.innerHTML="HOLD<br>TO SPEAK";
-  resBtn.classList.remove("recording"); resBtn.innerHTML="HOLD FOR<br>RESOLUTION";
+  recBtn.classList.remove("recording"); recBtn.textContent="Hold to speak";
+  resBtn.classList.remove("recording"); resBtn.textContent="Hold for resolution";
 }
 function startRecTimer(){
   recSecondsElapsed=0;
@@ -619,94 +594,112 @@ function startRecTimer(){
   recTimerInterval=setInterval(()=>{
     recSecondsElapsed++;
     line.textContent="● "+fmtTime(recSecondsElapsed);
-    if (recSecondsElapsed===MAX_RECORD_SECS-10) toast("⚠️ 10 seconds left");
   },1000);
   recAutoStopTimer=setTimeout(()=>{
-    if (mediaRecorder && mediaRecorder.state==="recording"){ toast("⏹ Max length — sending…"); mediaRecorder.stop(); }
+    if (mediaRecorder && mediaRecorder.state==="recording") mediaRecorder.stop();
   }, MAX_RECORD_SECS*1000);
 }
 function stopRecTimer(){
   clearInterval(recTimerInterval); clearTimeout(recAutoStopTimer);
   recTimerInterval=recAutoStopTimer=null;
-  const line=document.getElementById("recTimerLine");
-  const bar =document.getElementById("recBarFill");
-  line.textContent=""; bar.style.transition="none"; bar.style.width="0%";
+  document.getElementById("recTimerLine").textContent="";
+  const bar=document.getElementById("recBarFill");
+  bar.style.transition="none"; bar.style.width="0%";
 }
 async function sendRecording(){
   const dur=recSecondsElapsed;
   const wasResolution=recordingIsResolution;
-  if (!audioChunks.length){ return; }
+  if (!audioChunks.length) return;
   recBtn.disabled=true; resBtn.disabled=true;
   const activeBtn = wasResolution ? resBtn : recBtn;
-  activeBtn.innerHTML="SENDING…";
+  activeBtn.textContent="Sending…";
   try {
     const ext = extForRecorder(mediaRecorder);
     const blob = new Blob(audioChunks, {type:mediaRecorder.mimeType||"audio/webm"});
     const audioUrl = await uploadAudio(blob, ext, wasResolution);
     await push(ref(db, roomPath()+"/messages"), {
-      seat:mySeatId, name:myName, audioUrl, duration:dur, timestamp:Date.now(),
-      isResolution: wasResolution
+      seat:currentSeatId, audioUrl, duration:dur, timestamp:Date.now(), isResolution: wasResolution
     });
-    vibrateSent();
-    if (wasResolution) toast("🏛 Resolution recorded and sent to the room");
-  } catch(err){ console.error(err); toast("❌ Send failed — "+err.message); }
+  } catch(err){ console.error(err); alert("Send failed — "+err.message); }
   finally {
     recBtn.disabled=false; resBtn.disabled=false;
-    recBtn.innerHTML="HOLD<br>TO SPEAK"; resBtn.innerHTML="HOLD FOR<br>RESOLUTION";
+    recBtn.textContent="Hold to speak"; resBtn.textContent="Hold for resolution";
   }
 }
 recBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(false); });
-recBtn.addEventListener("pointerup",   ()=>{ if(isRecording) stopRecording(true); });
-recBtn.addEventListener("pointerleave",()=>{ if(isRecording) stopRecording(true); });
+recBtn.addEventListener("pointerup",    ()=>{ if(isRecording) stopRecording(true); });
+recBtn.addEventListener("pointerleave", ()=>{ if(isRecording) stopRecording(true); });
 recBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
 resBtn.addEventListener("pointerdown", (e)=>{ e.preventDefault(); startRecording(true); });
-resBtn.addEventListener("pointerup",   ()=>{ if(isRecording) stopRecording(true); });
-resBtn.addEventListener("pointerleave",()=>{ if(isRecording) stopRecording(true); });
+resBtn.addEventListener("pointerup",    ()=>{ if(isRecording) stopRecording(true); });
+resBtn.addEventListener("pointerleave", ()=>{ if(isRecording) stopRecording(true); });
 resBtn.addEventListener("pointercancel",()=>{ if(isRecording) stopRecording(true); });
 
-document.addEventListener("visibilitychange", ()=>{
-  if (document.hidden && isRecording) stopRecording(true);
-});
-window.addEventListener("beforeunload", ()=>{ if(mediaStream) mediaStream.getTracks().forEach(t=>t.stop()); });
-
-// ── ADMIN CLEAR — tap room title 3x ───────────
-let prayerTapCount=0, prayerTapTimer=null;
-document.getElementById("prayerTap").addEventListener("click", (e)=>{
-  e.stopPropagation();
-  prayerTapCount++;
-  clearTimeout(prayerTapTimer);
-  prayerTapTimer=setTimeout(()=>{ prayerTapCount=0; }, 1200);
-  if (prayerTapCount>=3){
-    prayerTapCount=0;
-    if (confirm("Clear all voices (including the resolution) in Room "+roomNum+"? Seats stay as they are.")){
-      remove(ref(db, roomPath()+"/messages")).then(()=>{
-        document.getElementById("feed").innerHTML = '<div class="feed-empty" id="feedEmpty">No voices yet — be the first to speak.</div>';
-        document.getElementById("resolutionPin").style.display="none";
-        latestResolution=null;
-        toast("🧹 Room "+roomNum+" cleared");
-      }).catch(()=>toast("❌ Clear failed"));
-    }
-  }
+document.getElementById("exportBtn").addEventListener("click", ()=>{
+  if (!latestResolution) return;
+  downloadAudio(latestResolution.audioUrl, "resolution_room"+currentRoomId+"_"+latestResolution.timestamp+".webm");
 });
 
-// ── BOOT ────────────────────────────────────────
-(async function boot(){
-  if (myName){
-    const storedSeat = localStorage.getItem(seatStorageKey());
-    if (storedSeat){
-      try {
-        const snap = await get(ref(db, roomPath()+"/seats/"+storedSeat));
-        if (snap.exists() && snap.val().name===myName){
-          mySeatId=storedSeat;
-          enterRoom();
-          return;
-        }
-      } catch(err){ console.error(err); }
-      localStorage.removeItem(seatStorageKey());
-    }
+document.addEventListener("visibilitychange", ()=>{ if (document.hidden && isRecording) stopRecording(true); });
+window.addEventListener("beforeunload", ()=>{ stopMic(); });
+
+// ── ADMIN: folded-hands x3, manage any room, with confirm ──
+let tapTimes = [];
+document.getElementById("brandMark").addEventListener("click", ()=>{
+  const now = Date.now();
+  tapTimes.push(now);
+  tapTimes = tapTimes.filter(t=>now-t<1200);
+  if (tapTimes.length>=3){ tapTimes=[]; openAdmin(); }
+});
+
+const adminOverlay     = document.getElementById("adminOverlay");
+const adminRoomInput   = document.getElementById("adminRoomInput");
+const adminRoomStatus  = document.getElementById("adminRoomStatus");
+const adminConfirmBox  = document.getElementById("adminConfirmBox");
+
+function openAdmin(){
+  adminConfirmBox.style.display = "none";
+  adminRoomInput.value = currentRoomId ? parseInt(currentRoomId,10) : "";
+  adminOverlay.style.display = "flex";
+  refreshAdminRoomStatus();
+}
+document.getElementById("adminCloseBtn").addEventListener("click", ()=>adminOverlay.style.display="none");
+adminRoomInput.addEventListener("input", refreshAdminRoomStatus);
+
+async function refreshAdminRoomStatus(){
+  const n = adminRoomInput.value.trim();
+  if (!n){ adminRoomStatus.textContent="—"; return; }
+  const id = padRoomIdFromInput(n);
+  const snap = await get(ref(db, "listenings_rooms/"+id));
+  if (!snap.exists()){ adminRoomStatus.textContent = "Room "+n+": not created yet."; return; }
+  const data = snap.val() || {};
+  const seatCount = data.seats ? Object.keys(data.seats).length : 0;
+  const msgCount  = data.messages ? Object.keys(data.messages).length : 0;
+  adminRoomStatus.textContent = "Room "+n+" — "+seatCount+" seated — "+msgCount+" voice message(s)";
+}
+
+document.getElementById("adminClearBtn").addEventListener("click", ()=>{
+  const n = adminRoomInput.value.trim();
+  if (!n) return;
+  adminConfirmBox.style.display = "block";
+  adminConfirmBox.innerHTML = "Do you really want to clear the voices of Room "+n+"? This removes every seat and every voice message. This cannot be undone."+
+    '<div class="row"><button class="btn-danger" id="confirmYes">Yes, clear it</button><button class="btn-ghost" id="confirmNo">No, keep it</button></div>';
+  document.getElementById("confirmNo").addEventListener("click", ()=>{ adminConfirmBox.style.display="none"; });
+  document.getElementById("confirmYes").addEventListener("click", ()=>clearRoom(n));
+});
+
+async function clearRoom(n){
+  const id = padRoomIdFromInput(n);
+  await remove(ref(db, "listenings_rooms/"+id));
+  if (currentRoomId === id){
+    localStorage.removeItem("listenings_seat_"+id);
+    currentSeatId = null;
+    latestResolution = null;
   }
-  loadSeatScreen();
-})();
+  adminConfirmBox.style.display = "none";
+  refreshAdminRoomStatus();
+  alert("Room "+n+" is cleared and free for a new matter.");
+}
 </script>
 </body>
 </html>
